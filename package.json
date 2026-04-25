@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mig:new": "bash scripts/mig-new.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.0",
