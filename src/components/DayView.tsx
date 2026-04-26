@@ -14,7 +14,7 @@ interface DayViewProps {
 }
 
 const HOUR_PX = 60
-const HOUR_COL_W = 56
+const HOUR_COL_W = 44  // narrower on mobile; desktop gets more padding
 const HEADER_H = 36
 
 function timeToHour(t: string): number {
@@ -94,66 +94,69 @@ export function DayView({
   const totalHeight = (endHour - startHour) * HOUR_PX
 
   return (
-    <div className="flex border border-neutral-800 rounded-lg overflow-hidden bg-neutral-950">
-      <div
-        className="bg-neutral-925 border-r border-neutral-800 shrink-0"
-        style={{ width: HOUR_COL_W }}
-      >
+    <div className="border border-neutral-800 rounded-lg overflow-hidden bg-neutral-950">
+      {/* overflow-x-auto allows horizontal scroll on narrow screens */}
+      <div className="flex overflow-x-auto">
         <div
-          className="border-b border-neutral-800"
-          style={{ height: HEADER_H }}
-        />
-        {hours.map((h) => (
-          <div
-            key={h}
-            className="text-xs text-neutral-500 text-right pr-2 pt-1 font-mono"
-            style={{ height: HOUR_PX }}
-          >
-            {String(h).padStart(2, '0')}:00
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div
-          className="border-b border-neutral-800 px-3 flex items-center justify-between font-medium"
-          style={{ height: HEADER_H }}
+          className="bg-neutral-925 border-r border-neutral-800 shrink-0"
+          style={{ width: HOUR_COL_W }}
         >
-          <span>{dateLabel}</span>
-          <span className="text-[10px] text-neutral-500 font-normal flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded-sm border border-dashed border-neutral-500" />
-              plan
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded-sm bg-neutral-500" />
-              actual
-            </span>
-          </span>
-        </div>
-        <div className="relative" style={{ height: totalHeight }}>
-          {hours.map((h, i) => (
+          <div
+            className="border-b border-neutral-800"
+            style={{ height: HEADER_H }}
+          />
+          {hours.map((h) => (
             <div
               key={h}
-              className="absolute inset-x-0 border-b border-dotted border-neutral-800"
-              style={{ top: i * HOUR_PX, height: HOUR_PX }}
-            />
+              className="text-[10px] sm:text-xs text-neutral-500 text-right pr-1 sm:pr-2 pt-1 font-mono"
+              style={{ height: HOUR_PX }}
+            >
+              {String(h).padStart(2, '0')}:00
+            </div>
           ))}
+        </div>
 
-          {planBlocks.map((b) =>
-            renderBlock(b, {
-              kind: 'plan',
-              startHour,
-              onClick: onBlockClick && ((id) => onBlockClick('plan', id)),
-            }),
-          )}
-          {actualBlocks.map((b) =>
-            renderBlock(b, {
-              kind: 'actual',
-              startHour,
-              onClick: onBlockClick && ((id) => onBlockClick('actual', id)),
-            }),
-          )}
+        <div className="flex-1 min-w-0" style={{ minWidth: 200 }}>
+          <div
+            className="border-b border-neutral-800 px-2 sm:px-3 flex items-center justify-between font-medium"
+            style={{ height: HEADER_H }}
+          >
+            <span className="text-sm sm:text-base">{dateLabel}</span>
+            <span className="text-[10px] text-neutral-500 font-normal flex items-center gap-2 sm:gap-3">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-2 rounded-sm border border-dashed border-neutral-500" />
+                plan
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-2 rounded-sm bg-neutral-500" />
+                actual
+              </span>
+            </span>
+          </div>
+          <div className="relative" style={{ height: totalHeight }}>
+            {hours.map((h, i) => (
+              <div
+                key={h}
+                className="absolute inset-x-0 border-b border-dotted border-neutral-800"
+                style={{ top: i * HOUR_PX, height: HOUR_PX }}
+              />
+            ))}
+
+            {planBlocks.map((b) =>
+              renderBlock(b, {
+                kind: 'plan',
+                startHour,
+                onClick: onBlockClick && ((id) => onBlockClick('plan', id)),
+              }),
+            )}
+            {actualBlocks.map((b) =>
+              renderBlock(b, {
+                kind: 'actual',
+                startHour,
+                onClick: onBlockClick && ((id) => onBlockClick('actual', id)),
+              }),
+            )}
+          </div>
         </div>
       </div>
     </div>

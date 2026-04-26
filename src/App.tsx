@@ -77,9 +77,9 @@ export default function App() {
 
   return (
     <main className="min-h-dvh bg-neutral-950 text-neutral-100">
-      <div className="max-w-3xl mx-auto px-6 py-8">
-        <header className="mb-6 flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold">나만의 캘린더</h1>
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+        <header className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
+          <h1 className="text-lg sm:text-2xl font-bold">나만의 캘린더</h1>
           <div className="flex-1" />
           <div className="flex items-center gap-1 text-sm">
             <button
@@ -189,7 +189,7 @@ function AddBlockForm({
   return (
     <form
       onSubmit={submit}
-      className="mt-6 rounded-lg border border-neutral-800 p-4 grid gap-3"
+      className="mt-4 sm:mt-6 rounded-lg border border-neutral-800 p-3 sm:p-4 grid gap-3"
     >
       <div className="text-sm font-medium text-neutral-300">
         새 block 추가 · {date}
@@ -214,37 +214,42 @@ function AddBlockForm({
         </label>
       </div>
 
-      <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-2 items-center text-sm">
-        <span className="text-neutral-500 text-xs">시작</span>
-        <input
-          type="time"
-          step={900}
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 font-mono"
-        />
-        <span className="text-neutral-500 text-xs">끝</span>
-        <input
-          type="time"
-          step={900}
-          value={end}
-          onChange={(e) => setEnd(e.target.value)}
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 font-mono"
-        />
+      {/* 시간 선택: 모바일 single column, sm 이상 2열 */}
+      <div className="grid grid-cols-2 sm:grid-cols-[auto_1fr_auto_1fr] gap-2 items-center text-sm">
+        <label className="flex items-center gap-1.5">
+          <span className="text-neutral-500 text-xs w-6">시작</span>
+          <input
+            type="time"
+            step={900}
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 sm:py-1 font-mono w-full"
+          />
+        </label>
+        <label className="flex items-center gap-1.5">
+          <span className="text-neutral-500 text-xs w-4">끝</span>
+          <input
+            type="time"
+            step={900}
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 sm:py-1 font-mono w-full"
+          />
+        </label>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
         <input
           type="text"
           placeholder="product name (예: 강의 자료)"
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-sm"
+          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-2 sm:py-1.5 text-sm"
         />
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as CategoryId)}
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-sm"
+          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-2 sm:py-1.5 text-sm"
         >
           {CATEGORIES.map((c) => (
             <option key={c.id} value={c.id}>
@@ -255,14 +260,13 @@ function AddBlockForm({
       </div>
 
       <div className="text-[11px] text-neutral-500">
-        💡 동일 name 의 product 가 있으면 카테고리는 무시 — 기존 product 의
-        category 로 묶임 (`get_or_create_product` RPC).
+        동일 name 의 product 가 있으면 카테고리는 무시 — 기존 category 로 묶임.
       </div>
 
       <button
         type="submit"
         disabled={submitting}
-        className="bg-neutral-100 text-neutral-900 px-3 py-1.5 rounded font-medium text-sm disabled:opacity-50"
+        className="bg-neutral-100 text-neutral-900 px-3 py-2 sm:py-1.5 rounded font-medium text-sm disabled:opacity-50"
       >
         {submitting ? '저장 중...' : '추가'}
       </button>
