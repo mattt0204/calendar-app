@@ -2,7 +2,8 @@ import type {
   PlanBlockWithProduct,
   ActualBlockWithProduct,
 } from '../lib/types'
-import { CATEGORY_BY_ID } from '../lib/categories'
+import type { CategoryId } from '../lib/categories'
+import { useTheme } from '../lib/theme'
 
 interface DayViewProps {
   planBlocks: PlanBlockWithProduct[]
@@ -22,22 +23,21 @@ function timeToHour(t: string): number {
   return h + m / 60
 }
 
-interface RenderOpts {
+interface BlockProps {
+  block: PlanBlockWithProduct | ActualBlockWithProduct
   kind: 'plan' | 'actual'
   startHour: number
+  getCategoryColor: (id: CategoryId) => string
   onClick?: (id: string) => void
 }
 
-function renderBlock(
-  b: PlanBlockWithProduct | ActualBlockWithProduct,
-  opts: RenderOpts,
-) {
+function Block({ block: b, kind, startHour, getCategoryColor, onClick }: BlockProps) {
   const start = timeToHour(b.start_time)
   const end = timeToHour(b.end_time)
-  const top = (start - opts.startHour) * HOUR_PX
+  const top = (start - startHour) * HOUR_PX
   const height = (end - start) * HOUR_PX - 2
-  const cat = CATEGORY_BY_ID[b.product.category]
-  const isPlan = opts.kind === 'plan'
+  const color = getCategoryColor(b.product.category)
+  const isPlan = kind === 'plan'
 
   // plan = 외곽 (left 4 right 4) dashed faint, actual = 안쪽 (left 10 right 10) solid bold.
   // 같은 시간대여도 plan 의 dashed outline 이 actual 양옆으로 6px 가시 → drift 0 일 때도 둘 다 보임.
@@ -47,28 +47,28 @@ function renderBlock(
     height,
     left: inset,
     right: inset,
-    background: isPlan ? `${cat.color}11` : `${cat.color}55`,
-    borderColor: isPlan ? `${cat.color}66` : cat.color,
+    background: isPlan ? `${color}11` : `${color}55`,
+    borderColor: isPlan ? `${color}66` : color,
   }
 
   return (
     <div
-      key={`${opts.kind}-${b.id}`}
-      onClick={opts.onClick ? () => opts.onClick!(b.id) : undefined}
+      key={`${kind}-${b.id}`}
+      onClick={onClick ? () => onClick(b.id) : undefined}
       className={[
         'absolute rounded-md px-2 py-1 overflow-hidden',
         isPlan
           ? 'border border-dashed'
           : 'border-l-4 border border-solid shadow-md',
-        opts.onClick ? 'cursor-pointer hover:brightness-125' : '',
+        onClick ? 'cursor-pointer hover:brightness-125' : '',
       ].join(' ')}
       style={style}
-      title={`${opts.kind} · ${b.product.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`}
+      title={`${kind} · ${b.product.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`}
     >
       <div className="flex items-center gap-1.5 text-sm">
         <span
           className="w-2 h-2 rounded-full shrink-0"
-          style={{ background: cat.color }}
+          style={{ background: color }}
         />
         <span className={isPlan ? 'truncate' : 'font-medium truncate'}>
           {b.product.name}
@@ -89,6 +89,8 @@ export function DayView({
   endHour = 20,
   onBlockClick,
 }: DayViewProps) {
+  const { getCategoryColor } = useTheme()
+
   const hours: number[] = []
   for (let h = startHour; h < endHour; h++) hours.push(h)
   const totalHeight = (endHour - startHour) * HOUR_PX
@@ -142,20 +144,26 @@ export function DayView({
               />
             ))}
 
-            {planBlocks.map((b) =>
-              renderBlock(b, {
-                kind: 'plan',
-                startHour,
-                onClick: onBlockClick && ((id) => onBlockClick('plan', id)),
-              }),
-            )}
-            {actualBlocks.map((b) =>
-              renderBlock(b, {
-                kind: 'actual',
-                startHour,
-                onClick: onBlockClick && ((id) => onBlockClick('actual', id)),
-              }),
-            )}
+            {planBlocks.map((b) => (
+              <Block
+                key={`plan-${b.id}`}
+                block={b}
+                kind="plan"
+                startHour={startHour}
+                getCategoryColor={getCategoryColor}
+                onClick={onBlockClick && ((id) => onBlockClick('plan', id))}
+              />
+            ))}
+            {actualBlocks.map((b) => (
+              <Block
+                key={`actual-${b.id}`}
+                block={b}
+                kind="actual"
+                startHour={startHour}
+                getCategoryColor={getCategoryColor}
+                onClick={onBlockClick && ((id) => onBlockClick('actual', id))}
+              />
+            ))}
           </div>
         </div>
       </div>

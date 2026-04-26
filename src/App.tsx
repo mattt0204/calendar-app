@@ -6,6 +6,8 @@ import type {
 } from './lib/types'
 import { CATEGORIES, type CategoryId } from './lib/categories'
 import { DayView } from './components/DayView'
+import { ThemeProvider } from './lib/theme'
+import { TweaksPanel } from './components/TweaksPanel'
 
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -29,7 +31,7 @@ function dateLabel(s: string): string {
   return `${DAY_KO[d.getDay()]} ${d.getDate()}`
 }
 
-export default function App() {
+function AppInner() {
   const [date, setDate] = useState(todayString())
   const [planBlocks, setPlanBlocks] = useState<PlanBlockWithProduct[] | null>(
     null,
@@ -38,6 +40,7 @@ export default function App() {
     ActualBlockWithProduct[] | null
   >(null)
   const [error, setError] = useState<string | null>(null)
+  const [tweaksOpen, setTweaksOpen] = useState(false)
 
   const refresh = useCallback(async () => {
     setError(null)
@@ -77,6 +80,7 @@ export default function App() {
 
   return (
     <main className="min-h-dvh bg-neutral-950 text-neutral-100">
+      <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} />
       <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         <header className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
           <h1 className="text-lg sm:text-2xl font-bold">나만의 캘린더</h1>
@@ -106,6 +110,14 @@ export default function App() {
             </button>
           </div>
           <div className="text-neutral-500 text-sm font-mono">{date}</div>
+          <button
+            onClick={() => setTweaksOpen(true)}
+            className="px-2 py-1 rounded hover:bg-neutral-800 text-neutral-500 hover:text-neutral-300 text-sm"
+            aria-label="Tweaks 패널 열기"
+            title="Tweaks"
+          >
+            ⚙
+          </button>
         </header>
 
         {error && (
@@ -135,6 +147,14 @@ export default function App() {
         />
       </div>
     </main>
+  )
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppInner />
+    </ThemeProvider>
   )
 }
 
