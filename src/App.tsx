@@ -77,6 +77,33 @@ function AppInner() {
     refresh()
   }, [refresh])
 
+  // Supabase Realtime subscription
+  // 다른 client (Discord 봇 / MCP / Siri 등)가 DB를 변경하면 자동 갱신
+  useEffect(() => {
+    const channel = supabase
+      .channel(`calendar-realtime-${date}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'plan_blocks', filter: `date=eq.${date}` },
+        () => { refresh() },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'actual_blocks', filter: `date=eq.${date}` },
+        () => { refresh() },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => { refresh() },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [date, refresh])
+
   // ⌘P / Ctrl+P global shortcut
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
