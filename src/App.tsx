@@ -11,6 +11,7 @@ import { TweaksPanel } from './components/TweaksPanel'
 import { InspectorPanel, type InspectorTarget } from './components/InspectorPanel'
 import { CommandPalette } from './components/CommandPalette'
 import { WeekView } from './components/WeekView'
+import { MonthView } from './components/MonthView'
 
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -198,9 +199,10 @@ function AppInner() {
         )}
 
         {view === 'month' && (
-          <div className="rounded-lg border border-neutral-800 p-4 text-sm text-neutral-500">
-            월간 뷰 — 준비 중
-          </div>
+          <MonthView
+            anchorDate={date}
+            onDayClick={(d) => { setDate(d); setView('day') }}
+          />
         )}
 
         <AddBlockForm
