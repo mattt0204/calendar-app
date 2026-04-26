@@ -1,3 +1,4 @@
+import { useCallback, useRef, useState } from 'react'
 import type {
   PlanBlockWithProduct,
   ActualBlockWithProduct,
@@ -12,6 +13,8 @@ interface DayViewProps {
   startHour?: number
   endHour?: number
   onBlockClick?: (kind: 'plan' | 'actual', id: string) => void
+  /** Called when user drag-to-creates on the grid. start/end are "HH:MM" strings */
+  onDragCreate?: (start: string, end: string) => void
 }
 
 const HOUR_PX = 60
@@ -54,6 +57,7 @@ function Block({ block: b, kind, startHour, getCategoryColor, onClick }: BlockPr
   return (
     <div
       key={`${kind}-${b.id}`}
+      data-block="true"
       onClick={onClick ? () => onClick(b.id) : undefined}
       className={[
         'absolute rounded-md px-2 py-1 overflow-hidden',
@@ -81,6 +85,14 @@ function Block({ block: b, kind, startHour, getCategoryColor, onClick }: BlockPr
   )
 }
 
+function snapTo15Min(hour: number): string {
+  const totalMinutes = hour * 60
+  const snapped = Math.round(totalMinutes / 15) * 15
+  const h = Math.floor(snapped / 60)
+  const m = snapped % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
 export function DayView({
   planBlocks,
   actualBlocks,
@@ -88,8 +100,75 @@ export function DayView({
   startHour = 8,
   endHour = 20,
   onBlockClick,
+  onDragCreate,
 }: DayViewProps) {
   const { getCategoryColor } = useTheme()
+
+  // Drag-to-create state
+  const gridRef = useRef<HTMLDivElement>(null)
+  const dragStartY = useRef<number | null>(null)
+  const [dragRange, setDragRange] = useState<{ top: number; height: number } | null>(null)
+
+  const yToHour = useCallback(
+    (y: number) => {
+      return startHour + y / HOUR_PX
+    },
+    [startHour],
+  )
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!onDragCreate) return
+      // Only when clicking on the grid directly (not on a block)
+      if ((e.target as HTMLElement).closest('[data-block]')) return
+      e.preventDefault()
+      const rect = gridRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const y = e.clientY - rect.top
+      dragStartY.current = y
+      setDragRange({ top: y, height: 0 })
+    },
+    [onDragCreate],
+  )
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (dragStartY.current === null) return
+      const rect = gridRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const y = e.clientY - rect.top
+      const top = Math.min(dragStartY.current, y)
+      const height = Math.abs(y - dragStartY.current)
+      setDragRange({ top, height })
+    },
+    [],
+  )
+
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent) => {
+      if (dragStartY.current === null) return
+      const rect = gridRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const y = e.clientY - rect.top
+      const startY = Math.min(dragStartY.current, y)
+      const endY = Math.max(dragStartY.current, y)
+
+      dragStartY.current = null
+      setDragRange(null)
+
+      // Minimum drag = 15px (15 min)
+      if (endY - startY < 10) return
+
+      const startHourF = yToHour(startY)
+      const endHourF = yToHour(endY)
+      const startStr = snapTo15Min(startHourF)
+      const endStr = snapTo15Min(endHourF)
+      if (startStr !== endStr && onDragCreate) {
+        onDragCreate(startStr, endStr)
+      }
+    },
+    [yToHour, onDragCreate],
+  )
 
   const hours: number[] = []
   for (let h = startHour; h < endHour; h++) hours.push(h)
@@ -135,7 +214,15 @@ export function DayView({
               </span>
             </span>
           </div>
-          <div className="relative" style={{ height: totalHeight }}>
+          <div
+            ref={gridRef}
+            className="relative"
+            style={{ height: totalHeight, cursor: onDragCreate ? 'crosshair' : undefined }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
             {hours.map((h, i) => (
               <div
                 key={h}
@@ -164,6 +251,18 @@ export function DayView({
                 onClick={onBlockClick && ((id) => onBlockClick('actual', id))}
               />
             ))}
+
+            {/* Drag-to-create preview */}
+            {dragRange && dragRange.height > 4 && (
+              <div
+                className="absolute inset-x-2 rounded border-2 border-dashed border-neutral-400 bg-neutral-700/30 pointer-events-none z-10"
+                style={{ top: dragRange.top, height: dragRange.height }}
+              >
+                <div className="text-[10px] text-neutral-400 px-1 pt-0.5 font-mono">
+                  {snapTo15Min(yToHour(dragRange.top))} – {snapTo15Min(yToHour(dragRange.top + dragRange.height))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -12,6 +12,7 @@ import { InspectorPanel, type InspectorTarget } from './components/InspectorPane
 import { CommandPalette } from './components/CommandPalette'
 import { WeekView } from './components/WeekView'
 import { MonthView } from './components/MonthView'
+import { QuickCreateModal } from './components/QuickCreateModal'
 
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -48,6 +49,7 @@ function AppInner() {
   const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget | null>(null)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [view, setView] = useState<'day' | 'week' | 'month'>('day')
+  const [quickCreate, setQuickCreate] = useState<{ start: string; end: string } | null>(null)
 
   const refresh = useCallback(async () => {
     setError(null)
@@ -82,6 +84,12 @@ function AppInner() {
         e.preventDefault()
         setCmdOpen((v) => !v)
       }
+      // N key = quick create
+      if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey &&
+          !(e.target instanceof HTMLInputElement) &&
+          !(e.target instanceof HTMLTextAreaElement)) {
+        setQuickCreate({ start: '09:00', end: '10:00' })
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -112,6 +120,15 @@ function AppInner() {
         actualBlocks={actualBlocks ?? []}
         onNavigateDate={(d) => { setDate(d); setCmdOpen(false) }}
       />
+      {quickCreate && (
+        <QuickCreateModal
+          prefill={quickCreate}
+          date={date}
+          onClose={() => setQuickCreate(null)}
+          onCreated={refresh}
+          onError={setError}
+        />
+      )}
       <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         <header className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
           <h1 className="text-lg sm:text-2xl font-bold">나만의 캘린더</h1>
@@ -186,6 +203,7 @@ function AppInner() {
               actualBlocks={actualBlocks}
               dateLabel={dateLabel(date)}
               onBlockClick={handleBlockClick}
+              onDragCreate={(s, e) => setQuickCreate({ start: s, end: e })}
             />
           )
         )}
