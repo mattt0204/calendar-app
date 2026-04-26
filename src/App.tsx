@@ -169,13 +169,17 @@ function AddBlockForm({
       return onError(rpcError.message)
     }
 
-    const table = kind === 'plan' ? 'plan_blocks' : 'actual_blocks'
-    const { error } = await supabase.from(table).insert({
+    // supabase-js 의 from<RelationName> 은 literal 만 narrow — union 으로 호출 X.
+    const row = {
       date,
       start_time: `${start}:00`,
       end_time: `${end}:00`,
       product_id: productId as string,
-    })
+    }
+    const { error } =
+      kind === 'plan'
+        ? await supabase.from('plan_blocks').insert(row)
+        : await supabase.from('actual_blocks').insert(row)
     setSubmitting(false)
     if (error) return onError(error.message)
     setProductName('')
