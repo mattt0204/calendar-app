@@ -10,6 +10,7 @@ import { ThemeProvider } from './lib/theme'
 import { TweaksPanel } from './components/TweaksPanel'
 import { InspectorPanel, type InspectorTarget } from './components/InspectorPanel'
 import { CommandPalette } from './components/CommandPalette'
+import { WeekView } from './components/WeekView'
 
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -45,6 +46,7 @@ function AppInner() {
   const [tweaksOpen, setTweaksOpen] = useState(false)
   const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget | null>(null)
   const [cmdOpen, setCmdOpen] = useState(false)
+  const [view, setView] = useState<'day' | 'week' | 'month'>('day')
 
   const refresh = useCallback(async () => {
     setError(null)
@@ -138,6 +140,23 @@ function AppInner() {
             </button>
           </div>
           <div className="text-neutral-500 text-sm font-mono">{date}</div>
+          {/* View selector */}
+          <div className="flex items-center gap-0.5 bg-neutral-900 rounded px-1 py-0.5 text-xs">
+            {(['day', 'week', 'month'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={[
+                  'px-2 py-0.5 rounded transition-colors',
+                  view === v
+                    ? 'bg-neutral-700 text-neutral-100'
+                    : 'text-neutral-500 hover:text-neutral-300',
+                ].join(' ')}
+              >
+                {v === 'day' ? '일' : v === 'week' ? '주' : '월'}
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => setTweaksOpen(true)}
             className="px-2 py-1 rounded hover:bg-neutral-800 text-neutral-500 hover:text-neutral-300 text-sm"
@@ -155,17 +174,33 @@ function AppInner() {
           </div>
         )}
 
-        {planBlocks === null || actualBlocks === null ? (
-          <div className="rounded-lg border border-neutral-800 p-4 text-sm text-neutral-500">
-            로딩...
-          </div>
-        ) : (
-          <DayView
-            planBlocks={planBlocks}
-            actualBlocks={actualBlocks}
-            dateLabel={dateLabel(date)}
+        {view === 'day' && (
+          planBlocks === null || actualBlocks === null ? (
+            <div className="rounded-lg border border-neutral-800 p-4 text-sm text-neutral-500">
+              로딩...
+            </div>
+          ) : (
+            <DayView
+              planBlocks={planBlocks}
+              actualBlocks={actualBlocks}
+              dateLabel={dateLabel(date)}
+              onBlockClick={handleBlockClick}
+            />
+          )
+        )}
+
+        {view === 'week' && (
+          <WeekView
+            anchorDate={date}
             onBlockClick={handleBlockClick}
+            onDayClick={(d) => { setDate(d); setView('day') }}
           />
+        )}
+
+        {view === 'month' && (
+          <div className="rounded-lg border border-neutral-800 p-4 text-sm text-neutral-500">
+            월간 뷰 — 준비 중
+          </div>
         )}
 
         <AddBlockForm
