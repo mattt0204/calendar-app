@@ -9,6 +9,7 @@ import { DayView } from './components/DayView'
 import { ThemeProvider } from './lib/theme'
 import { TweaksPanel } from './components/TweaksPanel'
 import { InspectorPanel, type InspectorTarget } from './components/InspectorPanel'
+import { CommandPalette } from './components/CommandPalette'
 
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -43,6 +44,7 @@ function AppInner() {
   const [error, setError] = useState<string | null>(null)
   const [tweaksOpen, setTweaksOpen] = useState(false)
   const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget | null>(null)
+  const [cmdOpen, setCmdOpen] = useState(false)
 
   const refresh = useCallback(async () => {
     setError(null)
@@ -70,6 +72,18 @@ function AppInner() {
     refresh()
   }, [refresh])
 
+  // ⌘P / Ctrl+P global shortcut
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault()
+        setCmdOpen((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   function handleBlockClick(kind: 'plan' | 'actual', id: string) {
     const blocks = kind === 'plan' ? planBlocks : actualBlocks
     const block = blocks?.find((b) => b.id === id)
@@ -87,6 +101,13 @@ function AppInner() {
         onClose={() => setInspectorTarget(null)}
         onRefresh={refresh}
         onError={setError}
+      />
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        planBlocks={planBlocks ?? []}
+        actualBlocks={actualBlocks ?? []}
+        onNavigateDate={(d) => { setDate(d); setCmdOpen(false) }}
       />
       <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         <header className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
