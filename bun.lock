@@ -5,6 +5,7 @@
       "name": "my-calendar-app",
       "dependencies": {
         "@supabase/supabase-js": "^2.46.0",
+        "lightningcss": "^1.32.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
       },
@@ -16,6 +17,10 @@
         "tailwindcss": "^4.0.0",
         "typescript": "^5.7.2",
         "vite": "^6.0.5",
+      },
+      "optionalDependencies": {
+        "@rollup/rollup-darwin-x64": "^4.60.2",
+        "@tailwindcss/oxide-darwin-x64": "^4.2.4",
       },
     },
   },
