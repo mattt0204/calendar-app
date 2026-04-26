@@ -53,15 +53,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [paletteId],
   )
 
-  // Apply color mode class to document root
+  // Apply color mode as data-theme attribute for CSS variable switching
+  // :root = dark default, [data-theme="light"] = light override
   useEffect(() => {
-    const root = document.documentElement
     if (colorMode === 'light') {
-      root.classList.add('light-mode')
-      root.classList.remove('dark-mode')
+      document.documentElement.dataset.theme = 'light'
     } else {
-      root.classList.add('dark-mode')
-      root.classList.remove('light-mode')
+      document.documentElement.removeAttribute('data-theme')
     }
   }, [colorMode])
 

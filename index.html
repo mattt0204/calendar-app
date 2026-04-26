@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>나만의 캘린더</title>
+    <script>
+      try {
+        const m = localStorage.getItem('calendar_color_mode');
+        if (m === 'light') document.documentElement.dataset.theme = 'light';
+      } catch (_) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

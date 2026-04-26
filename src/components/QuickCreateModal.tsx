@@ -83,11 +83,11 @@ export function QuickCreateModal({
       <div
         role="dialog"
         aria-label="빠른 block 생성"
-        className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-sm z-50 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl p-4"
+        className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-sm z-50 bg-bg-elevated border border-border-strong rounded-xl shadow-2xl p-4"
       >
         <div className="flex items-center justify-between mb-3">
           <span className="font-medium text-sm">빠른 추가 · {date}</span>
-          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-300 px-1 text-sm">✕</button>
+          <button onClick={onClose} className="text-fg-subtle hover:text-fg px-1 text-sm">✕</button>
         </div>
 
         {/* Natural language input */}
@@ -99,12 +99,12 @@ export function QuickCreateModal({
             onChange={(e) => setNlInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleNlParse() }}}
             placeholder='예: "9시 강의 자료 1시간"'
-            className="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-sm placeholder-neutral-600"
+            className="flex-1 bg-bg-subtle border border-border-strong rounded px-2 py-1.5 text-sm placeholder-fg-subtle"
           />
           <button
             type="button"
             onClick={handleNlParse}
-            className="px-3 py-1.5 rounded bg-neutral-700 hover:bg-neutral-600 text-sm text-neutral-200"
+            className="px-3 py-1.5 rounded bg-bg-subtle hover:bg-border text-sm text-fg-muted"
           >
             파싱
           </button>
@@ -124,19 +124,19 @@ export function QuickCreateModal({
           {/* Time */}
           <div className="grid grid-cols-2 gap-2">
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-neutral-500">시작</span>
+              <span className="text-xs text-fg-subtle">시작</span>
               <input
                 type="time" step={900} value={start}
                 onChange={(e) => setStart(e.target.value)}
-                className="bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 font-mono text-sm"
+                className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 font-mono text-sm"
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-neutral-500">끝</span>
+              <span className="text-xs text-fg-subtle">끝</span>
               <input
                 type="time" step={900} value={end}
                 onChange={(e) => setEnd(e.target.value)}
-                className="bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 font-mono text-sm"
+                className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 font-mono text-sm"
               />
             </label>
           </div>
@@ -147,12 +147,12 @@ export function QuickCreateModal({
               type="text" placeholder="product name"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
-              className="bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-sm"
+              className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 text-sm"
             />
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as CategoryId)}
-              className="bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-sm"
+              className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 text-sm"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>{c.label}</option>
@@ -162,7 +162,7 @@ export function QuickCreateModal({
 
           <button
             type="submit" disabled={submitting}
-            className="bg-neutral-100 text-neutral-900 px-3 py-2 rounded font-medium text-sm disabled:opacity-50"
+            className="bg-accent text-on-accent px-3 py-2 rounded font-medium text-sm disabled:opacity-50"
           >
             {submitting ? '저장 중...' : '추가'}
           </button>

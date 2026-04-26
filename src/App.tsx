@@ -132,7 +132,7 @@ function AppInner() {
   const isToday = date === todayString()
 
   return (
-    <main className="min-h-dvh bg-neutral-950 text-neutral-100">
+    <main className="min-h-dvh bg-bg text-fg">
       <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} />
       <InspectorPanel
         target={inspectorTarget}
@@ -163,30 +163,30 @@ function AppInner() {
           <div className="flex items-center gap-1 text-sm">
             <button
               onClick={() => setDate((d) => shiftDate(d, -1))}
-              className="px-2 py-1 rounded hover:bg-neutral-800"
+              className="px-2 py-1 rounded hover:bg-bg-subtle"
               aria-label="이전"
             >
               ←
             </button>
             <button
               onClick={() => setDate(todayString())}
-              className={`px-2 py-1 rounded hover:bg-neutral-800 font-medium ${
-                isToday ? 'text-neutral-100' : 'text-neutral-500'
+              className={`px-2 py-1 rounded hover:bg-bg-subtle font-medium ${
+                isToday ? 'text-fg' : 'text-fg-subtle'
               }`}
             >
               오늘
             </button>
             <button
               onClick={() => setDate((d) => shiftDate(d, +1))}
-              className="px-2 py-1 rounded hover:bg-neutral-800"
+              className="px-2 py-1 rounded hover:bg-bg-subtle"
               aria-label="다음"
             >
               →
             </button>
           </div>
-          <div className="text-neutral-500 text-sm font-mono">{date}</div>
+          <div className="text-fg-subtle text-sm font-mono">{date}</div>
           {/* View selector */}
-          <div className="flex items-center gap-0.5 bg-neutral-900 rounded px-1 py-0.5 text-xs">
+          <div className="flex items-center gap-0.5 bg-bg-elevated rounded px-1 py-0.5 text-xs">
             {(['day', 'week', 'month'] as const).map((v) => (
               <button
                 key={v}
@@ -194,8 +194,8 @@ function AppInner() {
                 className={[
                   'px-2 py-0.5 rounded transition-colors',
                   view === v
-                    ? 'bg-neutral-700 text-neutral-100'
-                    : 'text-neutral-500 hover:text-neutral-300',
+                    ? 'bg-bg-subtle text-fg'
+                    : 'text-fg-subtle hover:text-fg-muted',
                 ].join(' ')}
               >
                 {v === 'day' ? '일' : v === 'week' ? '주' : '월'}
@@ -204,7 +204,7 @@ function AppInner() {
           </div>
           <button
             onClick={() => setTweaksOpen(true)}
-            className="px-2 py-1 rounded hover:bg-neutral-800 text-neutral-500 hover:text-neutral-300 text-sm"
+            className="px-2 py-1 rounded hover:bg-bg-subtle text-fg-subtle hover:text-fg-muted text-sm"
             aria-label="Tweaks 패널 열기"
             title="Tweaks"
           >
@@ -213,15 +213,15 @@ function AppInner() {
         </header>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm">
-            <div className="font-medium text-red-300">에러</div>
-            <div className="text-red-400 mt-1 font-mono text-xs">{error}</div>
+          <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm">
+            <div className="font-medium text-danger">에러</div>
+            <div className="text-danger-muted mt-1 font-mono text-xs">{error}</div>
           </div>
         )}
 
         {view === 'day' && (
           planBlocks === null || actualBlocks === null ? (
-            <div className="rounded-lg border border-neutral-800 p-4 text-sm text-neutral-500">
+            <div className="rounded-lg border border-border p-4 text-sm text-fg-subtle">
               로딩...
             </div>
           ) : (
@@ -319,9 +319,9 @@ function AddBlockForm({
   return (
     <form
       onSubmit={submit}
-      className="mt-4 sm:mt-6 rounded-lg border border-neutral-800 p-3 sm:p-4 grid gap-3"
+      className="mt-4 sm:mt-6 rounded-lg border border-border p-3 sm:p-4 grid gap-3"
     >
-      <div className="text-sm font-medium text-neutral-300">
+      <div className="text-sm font-medium text-fg-muted">
         새 block 추가 · {date}
       </div>
 
@@ -347,23 +347,23 @@ function AddBlockForm({
       {/* 시간 선택: 모바일 single column, sm 이상 2열 */}
       <div className="grid grid-cols-2 sm:grid-cols-[auto_1fr_auto_1fr] gap-2 items-center text-sm">
         <label className="flex items-center gap-1.5">
-          <span className="text-neutral-500 text-xs w-6">시작</span>
+          <span className="text-fg-subtle text-xs w-6">시작</span>
           <input
             type="time"
             step={900}
             value={start}
             onChange={(e) => setStart(e.target.value)}
-            className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 sm:py-1 font-mono w-full"
+            className="bg-bg-elevated border border-border-strong rounded px-2 py-1.5 sm:py-1 font-mono w-full"
           />
         </label>
         <label className="flex items-center gap-1.5">
-          <span className="text-neutral-500 text-xs w-4">끝</span>
+          <span className="text-fg-subtle text-xs w-4">끝</span>
           <input
             type="time"
             step={900}
             value={end}
             onChange={(e) => setEnd(e.target.value)}
-            className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 sm:py-1 font-mono w-full"
+            className="bg-bg-elevated border border-border-strong rounded px-2 py-1.5 sm:py-1 font-mono w-full"
           />
         </label>
       </div>
@@ -374,12 +374,12 @@ function AddBlockForm({
           placeholder="product name (예: 강의 자료)"
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-2 sm:py-1.5 text-sm"
+          className="bg-bg-elevated border border-border-strong rounded px-2 py-2 sm:py-1.5 text-sm"
         />
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as CategoryId)}
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-2 sm:py-1.5 text-sm"
+          className="bg-bg-elevated border border-border-strong rounded px-2 py-2 sm:py-1.5 text-sm"
         >
           {CATEGORIES.map((c) => (
             <option key={c.id} value={c.id}>
@@ -389,14 +389,14 @@ function AddBlockForm({
         </select>
       </div>
 
-      <div className="text-[11px] text-neutral-500">
+      <div className="text-[11px] text-fg-subtle">
         동일 name 의 product 가 있으면 카테고리는 무시 — 기존 category 로 묶임.
       </div>
 
       <button
         type="submit"
         disabled={submitting}
-        className="bg-neutral-100 text-neutral-900 px-3 py-2 sm:py-1.5 rounded font-medium text-sm disabled:opacity-50"
+        className="bg-accent text-on-accent px-3 py-2 sm:py-1.5 rounded font-medium text-sm disabled:opacity-50"
       >
         {submitting ? '저장 중...' : '추가'}
       </button>

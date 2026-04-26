@@ -139,21 +139,21 @@ export function MonthView({ anchorDate, onDayClick }: MonthViewProps) {
   }, [anchorDate])
 
   return (
-    <div className="border border-neutral-800 rounded-lg overflow-hidden bg-neutral-950">
+    <div className="border border-border rounded-lg overflow-hidden bg-bg">
       {/* Month header */}
-      <div className="px-4 py-2 border-b border-neutral-800 flex items-center gap-2">
+      <div className="px-4 py-2 border-b border-border flex items-center gap-2">
         <span className="font-medium text-sm">{monthLabel}</span>
-        {loading && <span className="text-xs text-neutral-600">로딩...</span>}
+        {loading && <span className="text-xs text-fg-subtle">로딩...</span>}
       </div>
 
       {/* Day-of-week header */}
-      <div className="grid grid-cols-7 border-b border-neutral-800">
+      <div className="grid grid-cols-7 border-b border-border">
         {DAY_KO.map((d, i) => (
           <div
             key={d}
             className={[
               'text-center text-[10px] py-1',
-              i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-400' : 'text-neutral-600',
+              i === 0 ? 'text-weekend-sun' : i === 6 ? 'text-weekend-sat' : 'text-fg-subtle',
             ].join(' ')}
           >
             {d}
@@ -163,7 +163,7 @@ export function MonthView({ anchorDate, onDayClick }: MonthViewProps) {
 
       {/* Calendar grid */}
       {grid.map((week, wi) => (
-        <div key={wi} className="grid grid-cols-7 border-b border-neutral-800 last:border-b-0">
+        <div key={wi} className="grid grid-cols-7 border-b border-border last:border-b-0">
           {week.map(({ date, isCurrentMonth }) => {
             const dd = new Date(`${date}T00:00:00`)
             const dow = dd.getDay()
@@ -178,16 +178,16 @@ export function MonthView({ anchorDate, onDayClick }: MonthViewProps) {
                 key={date}
                 onClick={() => onDayClick?.(date)}
                 className={[
-                  'min-h-[64px] p-1 border-r border-neutral-800 last:border-r-0 cursor-pointer transition-colors',
+                  'min-h-[64px] p-1 border-r border-border last:border-r-0 cursor-pointer transition-colors',
                   isCurrentMonth ? '' : 'opacity-30',
-                  isToday ? 'bg-neutral-800/40' : 'hover:bg-neutral-900',
+                  isToday ? 'bg-bg-subtle/40' : 'hover:bg-bg-elevated',
                 ].join(' ')}
               >
                 {/* Date number */}
                 <div className={[
                   'text-[11px] font-mono mb-1 w-5 h-5 flex items-center justify-center rounded-full',
-                  isToday ? 'bg-neutral-100 text-neutral-900 font-bold' : (
-                    dow === 0 ? 'text-red-400' : dow === 6 ? 'text-blue-400' : 'text-neutral-400'
+                  isToday ? 'bg-accent text-on-accent font-bold' : (
+                    dow === 0 ? 'text-weekend-sun' : dow === 6 ? 'text-weekend-sat' : 'text-fg-muted'
                   ),
                 ].join(' ')}>
                   {dd.getDate()}
@@ -208,14 +208,14 @@ export function MonthView({ anchorDate, onDayClick }: MonthViewProps) {
 
                 {/* Hours label */}
                 {stats.totalActualHours > 0 && (
-                  <div className="text-[9px] text-neutral-600 font-mono">
+                  <div className="text-[9px] text-fg-subtle font-mono">
                     {stats.totalActualHours.toFixed(1)}h
                   </div>
                 )}
 
                 {/* Plan indicator */}
                 {hasPlan && stats.totalActualHours === 0 && (
-                  <div className="text-[9px] text-neutral-700">plan</div>
+                  <div className="text-[9px] text-fg-subtle">plan</div>
                 )}
               </div>
             )

@@ -89,20 +89,20 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
       <div
         role="dialog"
         aria-label="Block 인스펙터"
-        className="fixed top-0 right-0 h-full w-80 z-50 shadow-2xl border-l border-neutral-800 bg-neutral-950 text-neutral-100 flex flex-col"
+        className="fixed top-0 right-0 h-full w-80 z-50 shadow-2xl border-l border-border bg-bg text-fg flex flex-col"
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-4 py-3 border-b border-neutral-800"
+          className="flex items-center justify-between px-4 py-3 border-b border-border"
           style={{ borderLeftColor: color, borderLeftWidth: 3 }}
         >
           <div>
-            <div className="text-xs text-neutral-500 uppercase tracking-wider">{kind}</div>
+            <div className="text-xs text-fg-subtle uppercase tracking-wider">{kind}</div>
             <div className="font-medium text-sm truncate max-w-[200px]">{b.product.name}</div>
           </div>
           <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-neutral-300 px-1"
+            className="text-fg-subtle hover:text-fg px-1"
             aria-label="닫기"
           >
             ✕
@@ -112,7 +112,7 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
         {/* Body */}
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
           {/* Category badge */}
-          <div className="flex items-center gap-2 text-sm text-neutral-400">
+          <div className="flex items-center gap-2 text-sm text-fg-muted">
             <span
               className="w-3 h-3 rounded-full shrink-0"
               style={{ background: color }}
@@ -123,41 +123,41 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
           {/* Time range */}
           <div className="grid grid-cols-2 gap-2">
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-neutral-500">시작</span>
+              <span className="text-xs text-fg-subtle">시작</span>
               <input
                 type="time"
                 step={900}
                 value={start}
                 onChange={(e) => setStart(e.target.value)}
-                className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 font-mono text-sm"
+                className="bg-bg-elevated border border-border-strong rounded px-2 py-1.5 font-mono text-sm"
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-neutral-500">끝</span>
+              <span className="text-xs text-fg-subtle">끝</span>
               <input
                 type="time"
                 step={900}
                 value={end}
                 onChange={(e) => setEnd(e.target.value)}
-                className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 font-mono text-sm"
+                className="bg-bg-elevated border border-border-strong rounded px-2 py-1.5 font-mono text-sm"
               />
             </label>
           </div>
 
           {/* Note */}
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-neutral-500">메모</span>
+            <span className="text-xs text-fg-subtle">메모</span>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
               placeholder="이 시간에 뭘 했지..."
-              className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-sm resize-none"
+              className="bg-bg-elevated border border-border-strong rounded px-2 py-1.5 text-sm resize-none"
             />
           </label>
 
           {/* Metadata */}
-          <div className="text-[11px] text-neutral-600 space-y-0.5 font-mono">
+          <div className="text-[11px] text-fg-subtle space-y-0.5 font-mono">
             {b.created_at && (
               <div>생성: {new Date(b.created_at).toLocaleString('ko-KR')}</div>
             )}
@@ -171,7 +171,7 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-neutral-100 text-neutral-900 px-3 py-1.5 rounded font-medium text-sm disabled:opacity-50"
+              className="flex-1 bg-accent text-on-accent px-3 py-1.5 rounded font-medium text-sm disabled:opacity-50"
             >
               {saving ? '저장 중...' : '저장'}
             </button>
@@ -179,7 +179,7 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="px-3 py-1.5 rounded border border-red-900 text-red-400 hover:bg-red-950/30 text-sm disabled:opacity-50"
+              className="px-3 py-1.5 rounded border border-danger/40 text-danger hover:bg-danger/10 text-sm disabled:opacity-50"
             >
               {deleting ? '...' : '삭제'}
             </button>

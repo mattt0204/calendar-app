@@ -186,23 +186,23 @@ export function CommandPalette({
       <div
         role="dialog"
         aria-label="커맨드 팔레트"
-        className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg z-50 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden"
+        className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg z-50 bg-bg-elevated border border-border-strong rounded-xl shadow-2xl overflow-hidden"
       >
         {/* Search input */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800">
-          <span className="text-neutral-500 text-sm">⌘</span>
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+          <span className="text-fg-subtle text-sm">⌘</span>
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setCursor(0) }}
             placeholder="날짜 이동, block 검색..."
-            className="flex-1 bg-transparent text-neutral-100 placeholder-neutral-600 text-sm outline-none"
+            className="flex-1 bg-transparent text-fg placeholder-fg-subtle text-sm outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-neutral-600 hover:text-neutral-400 text-xs"
+              className="text-fg-subtle hover:text-fg-muted text-xs"
             >
               ✕
             </button>
@@ -215,7 +215,7 @@ export function CommandPalette({
           className="max-h-72 overflow-y-auto"
         >
           {items.length === 0 && (
-            <div className="px-4 py-6 text-center text-sm text-neutral-600">
+            <div className="px-4 py-6 text-center text-sm text-fg-subtle">
               결과 없음
             </div>
           )}
@@ -229,12 +229,12 @@ export function CommandPalette({
                   onClick={() => handleItemClick(item)}
                   className={[
                     'flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm',
-                    isActive ? 'bg-neutral-700' : 'hover:bg-neutral-800',
+                    isActive ? 'bg-bg-subtle' : 'hover:bg-bg-subtle/50',
                   ].join(' ')}
                 >
                   <span>{item.label}</span>
                   {item.description && (
-                    <span className="text-neutral-500 font-mono text-xs">{item.description}</span>
+                    <span className="text-fg-subtle font-mono text-xs">{item.description}</span>
                   )}
                 </div>
               )
@@ -249,7 +249,7 @@ export function CommandPalette({
                 onClick={() => handleItemClick(item)}
                 className={[
                   'flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm',
-                  isActive ? 'bg-neutral-700' : 'hover:bg-neutral-800',
+                  isActive ? 'bg-bg-subtle' : 'hover:bg-bg-subtle/50',
                 ].join(' ')}
               >
                 <span
@@ -257,12 +257,12 @@ export function CommandPalette({
                   style={{ background: color }}
                 />
                 <span className="flex-1 truncate">{b.product.name}</span>
-                <span className="text-neutral-500 font-mono text-xs shrink-0">
+                <span className="text-fg-subtle font-mono text-xs shrink-0">
                   {b.date} {b.start_time.slice(0, 5)}
                 </span>
                 <span className={[
                   'text-[10px] px-1 rounded',
-                  item.kind === 'plan' ? 'text-neutral-500 border border-neutral-700' : 'bg-neutral-700 text-neutral-300',
+                  item.kind === 'plan' ? 'text-fg-subtle border border-border-strong' : 'bg-bg-subtle text-fg-muted',
                 ].join(' ')}>
                   {item.kind}
                 </span>
@@ -272,7 +272,7 @@ export function CommandPalette({
         </div>
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-neutral-800 text-[11px] text-neutral-600 flex gap-3">
+        <div className="px-4 py-2 border-t border-border text-[11px] text-fg-subtle flex gap-3">
           <span>↑↓ 이동</span>
           <span>Enter 선택</span>
           <span>ESC 닫기</span>

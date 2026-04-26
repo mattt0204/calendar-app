@@ -148,23 +148,23 @@ export function WeekView({
   const totalHeight = (endHour - startHour) * HOUR_PX
 
   return (
-    <div className="border border-neutral-800 rounded-lg overflow-hidden bg-neutral-950">
+    <div className="border border-border rounded-lg overflow-hidden bg-bg">
       {loading && (
-        <div className="text-xs text-neutral-600 px-3 py-1 border-b border-neutral-800">
+        <div className="text-xs text-fg-subtle px-3 py-1 border-b border-border">
           로딩...
         </div>
       )}
       <div className="flex overflow-x-auto">
         {/* Hour column */}
         <div
-          className="bg-neutral-900 border-r border-neutral-800 shrink-0"
+          className="bg-bg-elevated border-r border-border shrink-0"
           style={{ width: HOUR_COL_W }}
         >
-          <div className="border-b border-neutral-800" style={{ height: HEADER_H }} />
+          <div className="border-b border-border" style={{ height: HEADER_H }} />
           {hours.map((h) => (
             <div
               key={h}
-              className="text-[9px] text-neutral-600 text-right pr-1 pt-0.5 font-mono"
+              className="text-[9px] text-fg-subtle text-right pr-1 pt-0.5 font-mono"
               style={{ height: HOUR_PX }}
             >
               {String(h).padStart(2, '0')}
@@ -183,27 +183,27 @@ export function WeekView({
           return (
             <div
               key={date}
-              className="flex-1 border-r border-neutral-800 last:border-r-0"
+              className="flex-1 border-r border-border last:border-r-0"
               style={{ minWidth: 48 }}
             >
               {/* Day header */}
               <div
                 className={[
-                  'border-b border-neutral-800 flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-800 transition-colors',
-                  isToday ? 'bg-neutral-800/50' : '',
+                  'border-b border-border flex flex-col items-center justify-center cursor-pointer hover:bg-bg-subtle transition-colors',
+                  isToday ? 'bg-bg-subtle/50' : '',
                 ].join(' ')}
                 style={{ height: HEADER_H }}
                 onClick={() => onDayClick?.(date)}
               >
                 <span className={[
                   'text-[9px] font-medium',
-                  dow === 0 ? 'text-red-400' : dow === 6 ? 'text-blue-400' : 'text-neutral-500',
+                  dow === 0 ? 'text-weekend-sun' : dow === 6 ? 'text-weekend-sat' : 'text-fg-subtle',
                 ].join(' ')}>
                   {DAY_KO[dow]}
                 </span>
                 <span className={[
                   'text-xs font-mono',
-                  isToday ? 'text-neutral-100 font-bold' : 'text-neutral-400',
+                  isToday ? 'text-fg font-bold' : 'text-fg-muted',
                 ].join(' ')}>
                   {d.getDate()}
                 </span>
@@ -214,7 +214,7 @@ export function WeekView({
                 {hours.map((h, i) => (
                   <div
                     key={h}
-                    className="absolute inset-x-0 border-b border-dotted border-neutral-800/50"
+                    className="absolute inset-x-0 border-b border-dotted border-border/50"
                     style={{ top: i * HOUR_PX, height: HOUR_PX }}
                   />
                 ))}

@@ -1,1 +1,58 @@
 @import "tailwindcss";
+
+/* ── Design token variables ──────────────────────────────────────────── */
+:root {
+  /* dark mode defaults */
+  --bg: #0a0a0a;          /* neutral-950 — page background */
+  --bg-elevated: #171717; /* neutral-900 — panel / card */
+  --bg-subtle: #262626;   /* neutral-800 — hover / selected / input */
+  --fg: #f5f5f5;          /* neutral-100 — body text */
+  --fg-muted: #a3a3a3;    /* neutral-400 — secondary text */
+  --fg-subtle: #737373;   /* neutral-500 — tertiary / placeholder, ~4.7:1 on dark bg */
+  --border: #262626;      /* neutral-800 — default border */
+  --border-strong: #404040; /* neutral-700 — emphasized border */
+  --accent: #f5f5f5;      /* neutral-100 — primary button bg */
+  --on-accent: #0a0a0a;   /* neutral-950 — text on primary button */
+  /* semantic: danger */
+  --danger-fg: #ef4444;       /* red-500, ~4.5:1 on dark bg */
+  --danger-fg-muted: #f87171; /* red-400, error banner body */
+  /* semantic: weekend */
+  --weekend-sun: #f87171;     /* red-400 */
+  --weekend-sat: #60a5fa;     /* blue-400 */
+}
+
+[data-theme="light"] {
+  --bg: #fafafa;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #e5e5e5;   /* neutral-200, hover/selected clearly visible (~1.3:1 vs bg) */
+  --fg: #0a0a0a;
+  --fg-muted: #525252;
+  --fg-subtle: #737373;   /* neutral-500, ~5.7:1 on light bg (was #a3a3a3, 2.42:1) */
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --accent: #0a0a0a;
+  --on-accent: #f5f5f5;
+  /* semantic: danger — higher contrast for light bg */
+  --danger-fg: #b91c1c;       /* red-700, ~5.1:1 on light bg */
+  --danger-fg-muted: #dc2626; /* red-600 */
+  /* semantic: weekend */
+  --weekend-sun: #dc2626;     /* red-600 */
+  --weekend-sat: #2563eb;     /* blue-600 */
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger-fg);
+  --color-danger-muted: var(--danger-fg-muted);
+  --color-weekend-sun: var(--weekend-sun);
+  --color-weekend-sat: var(--weekend-sat);
+}

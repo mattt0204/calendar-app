@@ -9,6 +9,7 @@ interface TweaksPanelProps {
 export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
   const { colorMode, paletteId, setColorMode, setPaletteId } = useTheme()
 
+
   if (!open) return null
 
   return (
@@ -24,20 +25,13 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
       <div
         role="dialog"
         aria-label="Tweaks 패널"
-        className={[
-          'fixed top-0 right-0 h-full w-72 z-50 shadow-2xl',
-          'border-l border-neutral-800',
-          colorMode === 'dark'
-            ? 'bg-neutral-950 text-neutral-100'
-            : 'bg-white text-neutral-900',
-          'flex flex-col',
-        ].join(' ')}
+        className="fixed top-0 right-0 h-full w-72 z-50 shadow-2xl border-l border-border bg-bg text-fg flex flex-col"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <span className="font-medium text-sm">Tweaks</span>
           <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-neutral-300 px-1"
+            className="text-fg-subtle hover:text-fg px-1"
             aria-label="닫기"
           >
             ✕
@@ -47,7 +41,7 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
           {/* 다크 / 라이트 모드 */}
           <section>
-            <div className="text-xs text-neutral-500 uppercase tracking-wider mb-2">
+            <div className="text-xs text-fg-subtle uppercase tracking-wider mb-2">
               화면 모드
             </div>
             <div className="flex gap-2">
@@ -58,8 +52,8 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
                   className={[
                     'flex-1 py-2 rounded text-sm font-medium border transition-colors',
                     colorMode === m
-                      ? 'border-neutral-400 bg-neutral-800 text-neutral-100'
-                      : 'border-neutral-700 text-neutral-500 hover:border-neutral-500',
+                      ? 'border-border-strong bg-bg-subtle text-fg'
+                      : 'border-border text-fg-subtle hover:border-border-strong',
                   ].join(' ')}
                 >
                   {m === 'dark' ? '다크' : '라이트'}
@@ -70,7 +64,7 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
 
           {/* 팔레트 4종 */}
           <section>
-            <div className="text-xs text-neutral-500 uppercase tracking-wider mb-2">
+            <div className="text-xs text-fg-subtle uppercase tracking-wider mb-2">
               카테고리 팔레트
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -81,8 +75,8 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
                   className={[
                     'flex flex-col items-start gap-1.5 p-2 rounded border text-sm transition-colors',
                     paletteId === p.id
-                      ? 'border-neutral-400 bg-neutral-800'
-                      : 'border-neutral-700 hover:border-neutral-500',
+                      ? 'border-border-strong bg-bg-subtle'
+                      : 'border-border hover:border-border-strong',
                   ].join(' ')}
                 >
                   {/* 색상 스와치 */}
@@ -95,7 +89,7 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
                       />
                     ))}
                   </div>
-                  <span className="text-xs text-neutral-400">{p.label}</span>
+                  <span className="text-xs text-fg-muted">{p.label}</span>
                 </button>
               ))}
             </div>

@@ -78,7 +78,7 @@ function Block({ block: b, kind, startHour, getCategoryColor, onClick }: BlockPr
           {b.product.name}
         </span>
       </div>
-      <div className="text-[10px] text-neutral-400 mt-0.5 font-mono">
+      <div className="text-[10px] text-fg-muted mt-0.5 font-mono">
         {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)}
       </div>
     </div>
@@ -175,21 +175,21 @@ export function DayView({
   const totalHeight = (endHour - startHour) * HOUR_PX
 
   return (
-    <div className="border border-neutral-800 rounded-lg overflow-hidden bg-neutral-950">
+    <div className="border border-border rounded-lg overflow-hidden bg-bg">
       {/* overflow-x-auto allows horizontal scroll on narrow screens */}
       <div className="flex overflow-x-auto">
         <div
-          className="bg-neutral-900 border-r border-neutral-800 shrink-0"
+          className="bg-bg-elevated border-r border-border shrink-0"
           style={{ width: HOUR_COL_W }}
         >
           <div
-            className="border-b border-neutral-800"
+            className="border-b border-border"
             style={{ height: HEADER_H }}
           />
           {hours.map((h) => (
             <div
               key={h}
-              className="text-[10px] sm:text-xs text-neutral-500 text-right pr-1 sm:pr-2 pt-1 font-mono"
+              className="text-[10px] sm:text-xs text-fg-subtle text-right pr-1 sm:pr-2 pt-1 font-mono"
               style={{ height: HOUR_PX }}
             >
               {String(h).padStart(2, '0')}:00
@@ -199,17 +199,17 @@ export function DayView({
 
         <div className="flex-1 min-w-0" style={{ minWidth: 200 }}>
           <div
-            className="border-b border-neutral-800 px-2 sm:px-3 flex items-center justify-between font-medium"
+            className="border-b border-border px-2 sm:px-3 flex items-center justify-between font-medium"
             style={{ height: HEADER_H }}
           >
             <span className="text-sm sm:text-base">{dateLabel}</span>
-            <span className="text-[10px] text-neutral-500 font-normal flex items-center gap-2 sm:gap-3">
+            <span className="text-[10px] text-fg-subtle font-normal flex items-center gap-2 sm:gap-3">
               <span className="flex items-center gap-1">
-                <span className="w-3 h-2 rounded-sm border border-dashed border-neutral-500" />
+                <span className="w-3 h-2 rounded-sm border border-dashed border-fg-muted" />
                 plan
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-3 h-2 rounded-sm bg-neutral-500" />
+                <span className="w-3 h-2 rounded-sm bg-fg-muted" />
                 actual
               </span>
             </span>
@@ -226,7 +226,7 @@ export function DayView({
             {hours.map((h, i) => (
               <div
                 key={h}
-                className="absolute inset-x-0 border-b border-dotted border-neutral-800"
+                className="absolute inset-x-0 border-b border-dotted border-border"
                 style={{ top: i * HOUR_PX, height: HOUR_PX }}
               />
             ))}
@@ -255,10 +255,10 @@ export function DayView({
             {/* Drag-to-create preview */}
             {dragRange && dragRange.height > 4 && (
               <div
-                className="absolute inset-x-2 rounded border-2 border-dashed border-neutral-400 bg-neutral-700/30 pointer-events-none z-10"
+                className="absolute inset-x-2 rounded border-2 border-dashed border-fg-muted bg-bg-subtle/30 pointer-events-none z-10"
                 style={{ top: dragRange.top, height: dragRange.height }}
               >
-                <div className="text-[10px] text-neutral-400 px-1 pt-0.5 font-mono">
+                <div className="text-[10px] text-fg-muted px-1 pt-0.5 font-mono">
                   {snapTo15Min(yToHour(dragRange.top))} – {snapTo15Min(yToHour(dragRange.top + dragRange.height))}
                 </div>
               </div>
