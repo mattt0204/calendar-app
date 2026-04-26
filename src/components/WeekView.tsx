@@ -3,13 +3,15 @@ import { supabase } from '../lib/supabase'
 import type { PlanBlockWithProduct, ActualBlockWithProduct } from '../lib/types'
 import type { CategoryId } from '../lib/categories'
 import { useTheme } from '../lib/theme'
+import type { InspectorTarget } from './InspectorPanel'
 
 interface WeekViewProps {
   /** 주의 기준 날짜 (보통 월요일 or 해당 주 any date) */
   anchorDate: string
   startHour?: number
   endHour?: number
-  onBlockClick?: (kind: 'plan' | 'actual', id: string) => void
+  /** full block object + kind — no App-side lookup needed */
+  onBlockSelect?: (target: InspectorTarget) => void
   onDayClick?: (date: string) => void
 }
 
@@ -53,7 +55,7 @@ interface BlockDotProps {
   kind: 'plan' | 'actual'
   startHour: number
   getCategoryColor: (id: CategoryId) => string
-  onClick?: (id: string) => void
+  onClick?: () => void
 }
 
 function BlockDot({ block: b, kind, startHour, getCategoryColor, onClick }: BlockDotProps) {
@@ -66,7 +68,7 @@ function BlockDot({ block: b, kind, startHour, getCategoryColor, onClick }: Bloc
 
   return (
     <div
-      onClick={onClick ? () => onClick(b.id) : undefined}
+      onClick={onClick}
       className={[
         'absolute inset-x-0.5 rounded-sm overflow-hidden',
         isPlan ? 'border border-dashed opacity-60' : 'border-l-2 border border-solid',
@@ -87,7 +89,7 @@ export function WeekView({
   anchorDate,
   startHour = 8,
   endHour = 20,
-  onBlockClick,
+  onBlockSelect,
   onDayClick,
 }: WeekViewProps) {
   const { getCategoryColor } = useTheme()
@@ -155,7 +157,7 @@ export function WeekView({
       <div className="flex overflow-x-auto">
         {/* Hour column */}
         <div
-          className="bg-neutral-925 border-r border-neutral-800 shrink-0"
+          className="bg-neutral-900 border-r border-neutral-800 shrink-0"
           style={{ width: HOUR_COL_W }}
         >
           <div className="border-b border-neutral-800" style={{ height: HEADER_H }} />
@@ -223,7 +225,7 @@ export function WeekView({
                     kind="plan"
                     startHour={startHour}
                     getCategoryColor={getCategoryColor}
-                    onClick={onBlockClick && ((id) => onBlockClick('plan', id))}
+                    onClick={onBlockSelect && (() => onBlockSelect({ kind: 'plan', block: b }))}
                   />
                 ))}
                 {actualBlocks.map((b) => (
@@ -233,7 +235,7 @@ export function WeekView({
                     kind="actual"
                     startHour={startHour}
                     getCategoryColor={getCategoryColor}
-                    onClick={onBlockClick && ((id) => onBlockClick('actual', id))}
+                    onClick={onBlockSelect && (() => onBlockSelect({ kind: 'actual', block: b }))}
                   />
                 ))}
               </div>

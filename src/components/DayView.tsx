@@ -179,7 +179,7 @@ export function DayView({
       {/* overflow-x-auto allows horizontal scroll on narrow screens */}
       <div className="flex overflow-x-auto">
         <div
-          className="bg-neutral-925 border-r border-neutral-800 shrink-0"
+          className="bg-neutral-900 border-r border-neutral-800 shrink-0"
           style={{ width: HOUR_COL_W }}
         >
           <div

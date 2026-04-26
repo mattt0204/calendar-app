@@ -238,7 +238,7 @@ function AppInner() {
         {view === 'week' && (
           <WeekView
             anchorDate={date}
-            onBlockClick={handleBlockClick}
+            onBlockSelect={setInspectorTarget}
             onDayClick={(d) => { setDate(d); setView('day') }}
           />
         )}
