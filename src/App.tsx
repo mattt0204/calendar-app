@@ -8,6 +8,7 @@ import { CATEGORIES, type CategoryId } from './lib/categories'
 import { DayView } from './components/DayView'
 import { ThemeProvider } from './lib/theme'
 import { TweaksPanel } from './components/TweaksPanel'
+import { InspectorPanel, type InspectorTarget } from './components/InspectorPanel'
 
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -41,6 +42,7 @@ function AppInner() {
   >(null)
   const [error, setError] = useState<string | null>(null)
   const [tweaksOpen, setTweaksOpen] = useState(false)
+  const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget | null>(null)
 
   const refresh = useCallback(async () => {
     setError(null)
@@ -68,12 +70,11 @@ function AppInner() {
     refresh()
   }, [refresh])
 
-  async function handleDelete(kind: 'plan' | 'actual', id: string) {
-    if (!confirm(`${kind} block 삭제?`)) return
-    const table = kind === 'plan' ? 'plan_blocks' : 'actual_blocks'
-    const { error } = await supabase.from(table).delete().eq('id', id)
-    if (error) return setError(error.message)
-    refresh()
+  function handleBlockClick(kind: 'plan' | 'actual', id: string) {
+    const blocks = kind === 'plan' ? planBlocks : actualBlocks
+    const block = blocks?.find((b) => b.id === id)
+    if (!block) return
+    setInspectorTarget({ kind, block })
   }
 
   const isToday = date === todayString()
@@ -81,6 +82,12 @@ function AppInner() {
   return (
     <main className="min-h-dvh bg-neutral-950 text-neutral-100">
       <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} />
+      <InspectorPanel
+        target={inspectorTarget}
+        onClose={() => setInspectorTarget(null)}
+        onRefresh={refresh}
+        onError={setError}
+      />
       <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         <header className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
           <h1 className="text-lg sm:text-2xl font-bold">나만의 캘린더</h1>
@@ -136,7 +143,7 @@ function AppInner() {
             planBlocks={planBlocks}
             actualBlocks={actualBlocks}
             dateLabel={dateLabel(date)}
-            onBlockClick={handleDelete}
+            onBlockClick={handleBlockClick}
           />
         )}
 
