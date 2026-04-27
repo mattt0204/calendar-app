@@ -3,8 +3,8 @@ import { supabase } from './lib/supabase'
 import type {
   ActualBlockWithProduct,
   PlanBlockWithProduct,
+  Product,
 } from './lib/types'
-import { CATEGORIES, type CategoryId } from './lib/categories'
 import { DayView } from './components/DayView'
 import { ThemeProvider } from './lib/theme'
 import { TweaksPanel } from './components/TweaksPanel'
@@ -44,6 +44,7 @@ function AppInner() {
   const [actualBlocks, setActualBlocks] = useState<
     ActualBlockWithProduct[] | null
   >(null)
+  const [products, setProducts] = useState<Product[]>([])
   const [error, setError] = useState<string | null>(null)
   const [tweaksOpen, setTweaksOpen] = useState(false)
   const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget | null>(null)
@@ -53,7 +54,7 @@ function AppInner() {
 
   const refresh = useCallback(async () => {
     setError(null)
-    const [planRes, actualRes] = await Promise.all([
+    const [planRes, actualRes, productsRes] = await Promise.all([
       supabase
         .from('plan_blocks')
         .select('*, product:products(*)')
@@ -64,11 +65,18 @@ function AppInner() {
         .select('*, product:products(*)')
         .eq('date', date)
         .order('start_time'),
+      supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('name'),
     ])
     if (planRes.error) return setError(planRes.error.message)
     if (actualRes.error) return setError(actualRes.error.message)
+    if (productsRes.error) return setError(productsRes.error.message)
     setPlanBlocks((planRes.data ?? []) as PlanBlockWithProduct[])
     setActualBlocks((actualRes.data ?? []) as ActualBlockWithProduct[])
+    setProducts((productsRes.data ?? []) as Product[])
   }, [date])
 
   useEffect(() => {
@@ -151,6 +159,7 @@ function AppInner() {
         <QuickCreateModal
           prefill={quickCreate}
           date={date}
+          products={products}
           onClose={() => setQuickCreate(null)}
           onCreated={refresh}
           onError={setError}
@@ -252,6 +261,7 @@ function AppInner() {
 
         <AddBlockForm
           date={date}
+          products={products}
           onAdded={refresh}
           onError={setError}
         />
@@ -270,49 +280,44 @@ export default function App() {
 
 function AddBlockForm({
   date,
+  products,
   onAdded,
   onError,
 }: {
   date: string
+  products: Product[]
   onAdded: () => void
   onError: (m: string) => void
 }) {
   const [kind, setKind] = useState<'plan' | 'actual'>('plan')
   const [start, setStart] = useState('09:00')
   const [end, setEnd] = useState('10:00')
-  const [productName, setProductName] = useState('')
-  const [category, setCategory] = useState<CategoryId>('8_기타')
+  const [productId, setProductId] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
+
+  // products 로드 시 첫 항목 default 선택
+  useEffect(() => {
+    if (!productId && products.length > 0) setProductId(products[0].id)
+  }, [products, productId])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    const name = productName.trim()
-    if (!name) return onError('product name 비어있음')
+    if (!productId) return onError('product 선택 필요 (markdown 으로 추가 후 sync)')
 
     setSubmitting(true)
-    const { data: productId, error: rpcError } = await supabase.rpc(
-      'get_or_create_product',
-      { p_name: name, p_category: category },
-    )
-    if (rpcError) {
-      setSubmitting(false)
-      return onError(rpcError.message)
-    }
-
-    // supabase-js 의 from<RelationName> 은 literal 만 narrow — union 으로 호출 X.
     const row = {
       date,
       start_time: `${start}:00`,
       end_time: `${end}:00`,
-      product_id: productId as string,
+      product_id: productId,
     }
+    // supabase-js 의 from<RelationName> 은 literal 만 narrow — union 으로 호출 X.
     const { error } =
       kind === 'plan'
         ? await supabase.from('plan_blocks').insert(row)
         : await supabase.from('actual_blocks').insert(row)
     setSubmitting(false)
     if (error) return onError(error.message)
-    setProductName('')
     onAdded()
   }
 
@@ -368,29 +373,25 @@ function AddBlockForm({
         </label>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-        <input
-          type="text"
-          placeholder="product name (예: 강의 자료)"
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
-          className="bg-bg-elevated border border-border-strong rounded px-2 py-2 sm:py-1.5 text-sm"
-        />
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as CategoryId)}
-          className="bg-bg-elevated border border-border-strong rounded px-2 py-2 sm:py-1.5 text-sm"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
+      <select
+        value={productId}
+        onChange={(e) => setProductId(e.target.value)}
+        disabled={products.length === 0}
+        className="bg-bg-elevated border border-border-strong rounded px-2 py-2 sm:py-1.5 text-sm disabled:opacity-60"
+      >
+        {products.length === 0 ? (
+          <option value="">products 없음 — markdown 으로 추가 후 sync</option>
+        ) : (
+          products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} · {p.category.replace(/^\d+_/, '')}
             </option>
-          ))}
-        </select>
-      </div>
+          ))
+        )}
+      </select>
 
       <div className="text-[11px] text-fg-subtle">
-        동일 name 의 product 가 있으면 카테고리는 무시 — 기존 category 로 묶임.
+        product / area 는 markdown SoT — 새 항목은 pa 폴더에 추가 후 sync 로 들어옴.
       </div>
 
       <button

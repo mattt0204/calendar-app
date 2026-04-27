@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import { CATEGORIES, type CategoryId } from '../lib/categories'
+import type { Product } from '../lib/types'
 import { parseNaturalBlock } from '../lib/nlp'
 
 interface QuickCreateModalProps {
   /** Pre-filled start/end from drag-to-create or natural language */
   prefill: { start: string; end: string; productName?: string } | null
   date: string
+  products: Product[]
   onClose: () => void
   onCreated: () => void
   onError: (msg: string) => void
@@ -15,6 +16,7 @@ interface QuickCreateModalProps {
 export function QuickCreateModal({
   prefill,
   date,
+  products,
   onClose,
   onCreated,
   onError,
@@ -22,8 +24,7 @@ export function QuickCreateModal({
   const [kind, setKind] = useState<'plan' | 'actual'>('actual')
   const [start, setStart] = useState(prefill?.start ?? '09:00')
   const [end, setEnd] = useState(prefill?.end ?? '10:00')
-  const [productName, setProductName] = useState(prefill?.productName ?? '')
-  const [category, setCategory] = useState<CategoryId>('8_기타')
+  const [productId, setProductId] = useState<string>('')
   const [nlInput, setNlInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -31,6 +32,19 @@ export function QuickCreateModal({
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  // mount 시 prefill.productName 매칭 시도, 없으면 첫 product default
+  useEffect(() => {
+    if (productId) return
+    if (prefill?.productName) {
+      const matched = matchProduct(products, prefill.productName)
+      if (matched) {
+        setProductId(matched.id)
+        return
+      }
+    }
+    if (products.length > 0) setProductId(products[0].id)
+  }, [prefill, products, productId])
 
   // ESC to close
   useEffect(() => {
@@ -46,26 +60,20 @@ export function QuickCreateModal({
     if (!parsed) return
     setStart(parsed.start)
     setEnd(parsed.end)
-    setProductName(parsed.productName)
+    const matched = matchProduct(products, parsed.productName)
+    if (matched) setProductId(matched.id)
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const name = productName.trim()
-    if (!name) return onError('product name 비어있음')
+    if (!productId) return onError('product 선택 필요 (markdown 으로 추가 후 sync)')
 
     setSubmitting(true)
-    const { data: productId, error: rpcError } = await supabase.rpc(
-      'get_or_create_product',
-      { p_name: name, p_category: category },
-    )
-    if (rpcError) { setSubmitting(false); return onError(rpcError.message) }
-
     const row = {
       date,
       start_time: `${start}:00`,
       end_time: `${end}:00`,
-      product_id: productId as string,
+      product_id: productId,
     }
     const { error } =
       kind === 'plan'
@@ -141,24 +149,23 @@ export function QuickCreateModal({
             </label>
           </div>
 
-          {/* Product + category */}
-          <div className="grid grid-cols-[1fr_auto] gap-2">
-            <input
-              type="text" placeholder="product name"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 text-sm"
-            />
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as CategoryId)}
-              className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 text-sm"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
-          </div>
+          {/* Product select (기존 DB 의 product 만) */}
+          <select
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            disabled={products.length === 0}
+            className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 text-sm disabled:opacity-60"
+          >
+            {products.length === 0 ? (
+              <option value="">products 없음 — markdown 으로 추가 후 sync</option>
+            ) : (
+              products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} · {p.category.replace(/^\d+_/, '')}
+                </option>
+              ))
+            )}
+          </select>
 
           <button
             type="submit" disabled={submitting}
@@ -169,5 +176,16 @@ export function QuickCreateModal({
         </form>
       </div>
     </>
+  )
+}
+
+function matchProduct(products: Product[], name: string): Product | undefined {
+  const lower = name.toLowerCase().trim()
+  if (!lower) return undefined
+  return (
+    products.find((p) => p.name === name) ??
+    products.find((p) => p.name.toLowerCase() === lower) ??
+    products.find((p) => p.name.toLowerCase().includes(lower)) ??
+    products.find((p) => lower.includes(p.name.toLowerCase()))
   )
 }
