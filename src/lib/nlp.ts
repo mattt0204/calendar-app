@@ -13,7 +13,7 @@
 export interface ParsedBlock {
   start: string  // "HH:MM"
   end: string    // "HH:MM"
-  productName: string
+  subjectName: string
 }
 
 function snapTo15(minutes: number): number {
@@ -114,13 +114,13 @@ export function parseNaturalBlock(input: string): ParsedBlock | null {
     }
   }
 
-  // Product name = remaining text (strip leading/trailing spaces and common separators)
-  const productName = remaining
+  // Subject name = remaining text (strip leading/trailing spaces and common separators)
+  const subjectName = remaining
     .replace(/^[-\s]+|[-\s]+$/g, '')
     .replace(/\s+/g, ' ')
     .trim()
 
-  if (!productName) return null
+  if (!subjectName) return null
 
   // Snap to 15 minutes
   const snappedStartM = snapTo15(startM)
@@ -129,6 +129,6 @@ export function parseNaturalBlock(input: string): ParsedBlock | null {
   return {
     start: formatHHMM(startH, snappedStartM),
     end: formatHHMM(endH ?? startH + 1, snappedEndM),
-    productName,
+    subjectName,
   }
 }

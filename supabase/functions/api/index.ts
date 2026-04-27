@@ -7,6 +7,9 @@
  * Auth: Authorization: Bearer <MY_CALENDAR_API_KEY>
  *
  * Ref: https://hono.dev/docs/getting-started/supabase-functions
+ *
+ * 데이터 모델: subjects (kind = 'product' | 'area') · plan_blocks · actual_blocks
+ *   - 시간 추적 단위 통합 마스터. SW product + pa/1_self/area/* 양쪽을 다룸.
  */
 
 import { Hono } from 'npm:hono@4'
@@ -26,12 +29,15 @@ const VALID_CATEGORIES: CategoryId[] = [
   '5_체화돌', '6_언어', '7_평판', '8_기타',
 ]
 
+type SubjectKind = 'product' | 'area'
+const VALID_KINDS: SubjectKind[] = ['product', 'area']
+const DEFAULT_KIND: SubjectKind = 'product'
+
 // ============================================================
 // Helpers
 // ============================================================
 
 function snap15(timeStr: string): string {
-  // "HH:MM" or "HH:MM:SS" → snap minutes to nearest 15
   const parts = timeStr.split(':')
   const h = parseInt(parts[0])
   const m = parseInt(parts[1] ?? '0')
@@ -51,6 +57,13 @@ function is15Aligned(timeStr: string): boolean {
 function errJson(c: unknown, status: number, error: string, message: string, field?: string) {
   // @ts-ignore
   return c.json({ error, message, ...(field ? { field } : {}) }, status)
+}
+
+function normalizeKind(k: unknown): SubjectKind {
+  if (typeof k === 'string' && VALID_KINDS.includes(k as SubjectKind)) {
+    return k as SubjectKind
+  }
+  return DEFAULT_KIND
 }
 
 // ============================================================
@@ -73,7 +86,6 @@ app.use('*', cors({
 app.use('*', async (c, next) => {
   const apiKey = Deno.env.get('MY_CALENDAR_API_KEY')
   if (!apiKey) {
-    // Key not configured — fail safe
     return errJson(c, 500, 'server_error', 'API key not configured')
   }
   const auth = c.req.header('Authorization')
@@ -83,7 +95,6 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// Supabase client factory (per-request, uses service role key)
 function getSupabase() {
   const url = Deno.env.get('SUPABASE_URL')!
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -108,7 +119,7 @@ app.get('/blocks', async (c) => {
   if (type === 'plan' || type === 'both') {
     const { data, error } = await sb
       .from('plan_blocks')
-      .select('*, product:products(*)')
+      .select('*, subject:subjects(*)')
       .gte('date', from)
       .lte('date', to)
       .order('date')
@@ -120,7 +131,7 @@ app.get('/blocks', async (c) => {
   if (type === 'actual' || type === 'both') {
     const { data, error } = await sb
       .from('actual_blocks')
-      .select('*, product:products(*)')
+      .select('*, subject:subjects(*)')
       .gte('date', from)
       .lte('date', to)
       .order('date')
@@ -139,17 +150,16 @@ app.get('/blocks/:id', async (c) => {
   const id = c.req.param('id')
   const sb = getSupabase()
 
-  // Try plan first, then actual
   const { data: plan } = await sb
     .from('plan_blocks')
-    .select('*, product:products(*)')
+    .select('*, subject:subjects(*)')
     .eq('id', id)
     .maybeSingle()
   if (plan) return c.json(plan)
 
   const { data: actual } = await sb
     .from('actual_blocks')
-    .select('*, product:products(*)')
+    .select('*, subject:subjects(*)')
     .eq('id', id)
     .maybeSingle()
   if (actual) return c.json(actual)
@@ -158,15 +168,19 @@ app.get('/blocks/:id', async (c) => {
 })
 
 // ============================================================
-// GET /products?active=true
+// GET /subjects?active=true&kind=product|area
 // ============================================================
-app.get('/products', async (c) => {
+app.get('/subjects', async (c) => {
   const activeParam = c.req.query('active')
+  const kindParam = c.req.query('kind')
   const sb = getSupabase()
 
-  let query = sb.from('products').select('*').order('name')
+  let query = sb.from('subjects').select('*').order('name')
   if (activeParam === 'true') {
     query = query.eq('is_active', true)
+  }
+  if (kindParam && VALID_KINDS.includes(kindParam as SubjectKind)) {
+    query = query.eq('kind', kindParam)
   }
 
   const { data, error } = await query
@@ -183,27 +197,27 @@ app.get('/summary/daily', async (c) => {
 
   const sb = getSupabase()
   const [planRes, actualRes] = await Promise.all([
-    sb.from('plan_blocks').select('product_id, start_time, end_time').eq('date', date),
-    sb.from('actual_blocks').select('product_id, start_time, end_time').eq('date', date),
+    sb.from('plan_blocks').select('subject_id, start_time, end_time').eq('date', date),
+    sb.from('actual_blocks').select('subject_id, start_time, end_time').eq('date', date),
   ])
   if (planRes.error) return errJson(c, 500, 'db_error', planRes.error.message)
   if (actualRes.error) return errJson(c, 500, 'db_error', actualRes.error.message)
 
-  function toMinutes(blocks: { product_id: string; start_time: string; end_time: string }[]) {
+  function toMinutes(blocks: { subject_id: string; start_time: string; end_time: string }[]) {
     const map: Record<string, number> = {}
     for (const b of blocks) {
       const [sh, sm] = b.start_time.split(':').map(Number)
       const [eh, em] = b.end_time.split(':').map(Number)
       const diff = (eh * 60 + em) - (sh * 60 + sm)
-      map[b.product_id] = (map[b.product_id] ?? 0) + diff
+      map[b.subject_id] = (map[b.subject_id] ?? 0) + diff
     }
     return map
   }
 
   return c.json({
     date,
-    plan_minutes_by_product: toMinutes(planRes.data ?? []),
-    actual_minutes_by_product: toMinutes(actualRes.data ?? []),
+    plan_minutes_by_subject: toMinutes(planRes.data ?? []),
+    actual_minutes_by_subject: toMinutes(actualRes.data ?? []),
   })
 })
 
@@ -219,50 +233,51 @@ app.get('/summary/weekly', async (c) => {
   const weekEnd = d.toISOString().slice(0, 10)
 
   const sb = getSupabase()
-  const [planRes, actualRes, productsRes] = await Promise.all([
-    sb.from('plan_blocks').select('product_id, start_time, end_time').gte('date', weekStart).lte('date', weekEnd),
-    sb.from('actual_blocks').select('product_id, start_time, end_time').gte('date', weekStart).lte('date', weekEnd),
-    sb.from('products').select('*'),
+  const [planRes, actualRes, subjectsRes] = await Promise.all([
+    sb.from('plan_blocks').select('subject_id, start_time, end_time').gte('date', weekStart).lte('date', weekEnd),
+    sb.from('actual_blocks').select('subject_id, start_time, end_time').gte('date', weekStart).lte('date', weekEnd),
+    sb.from('subjects').select('*'),
   ])
   if (planRes.error) return errJson(c, 500, 'db_error', planRes.error.message)
   if (actualRes.error) return errJson(c, 500, 'db_error', actualRes.error.message)
-  if (productsRes.error) return errJson(c, 500, 'db_error', productsRes.error.message)
+  if (subjectsRes.error) return errJson(c, 500, 'db_error', subjectsRes.error.message)
 
-  const products = productsRes.data ?? []
+  const subjects = subjectsRes.data ?? []
   const planMin: Record<string, number> = {}
   const actualMin: Record<string, number> = {}
 
   for (const b of planRes.data ?? []) {
     const [sh, sm] = b.start_time.split(':').map(Number)
     const [eh, em] = b.end_time.split(':').map(Number)
-    planMin[b.product_id] = (planMin[b.product_id] ?? 0) + (eh * 60 + em) - (sh * 60 + sm)
+    planMin[b.subject_id] = (planMin[b.subject_id] ?? 0) + (eh * 60 + em) - (sh * 60 + sm)
   }
   for (const b of actualRes.data ?? []) {
     const [sh, sm] = b.start_time.split(':').map(Number)
     const [eh, em] = b.end_time.split(':').map(Number)
-    actualMin[b.product_id] = (actualMin[b.product_id] ?? 0) + (eh * 60 + em) - (sh * 60 + sm)
+    actualMin[b.subject_id] = (actualMin[b.subject_id] ?? 0) + (eh * 60 + em) - (sh * 60 + sm)
   }
 
-  const allProductIds = new Set([...Object.keys(planMin), ...Object.keys(actualMin)])
-  const byProduct = [...allProductIds].map((pid) => ({
-    product: products.find((p) => p.id === pid) ?? null,
-    plan_min: planMin[pid] ?? 0,
-    actual_min: actualMin[pid] ?? 0,
-  })).filter((x) => x.product !== null)
+  const allIds = new Set([...Object.keys(planMin), ...Object.keys(actualMin)])
+  const bySubject = [...allIds].map((sid) => ({
+    subject: subjects.find((s) => s.id === sid) ?? null,
+    plan_min: planMin[sid] ?? 0,
+    actual_min: actualMin[sid] ?? 0,
+  })).filter((x) => x.subject !== null)
 
-  return c.json({ week_start: weekStart, by_product: byProduct })
+  return c.json({ week_start: weekStart, by_subject: bySubject })
 })
 
 // ============================================================
 // POST /blocks/plan  — new plan block
+// body: { date, start_time, end_time, subject_name, subject_kind?, note? }
 // ============================================================
 app.post('/blocks/plan', async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body) return errJson(c, 400, 'validation_failed', 'Invalid JSON body')
 
-  const { date, start_time, end_time, product_name, note } = body
-  if (!date || !start_time || !end_time || !product_name) {
-    return errJson(c, 400, 'validation_failed', 'date, start_time, end_time, product_name required')
+  const { date, start_time, end_time, subject_name, subject_kind, note } = body
+  if (!date || !start_time || !end_time || !subject_name) {
+    return errJson(c, 400, 'validation_failed', 'date, start_time, end_time, subject_name required')
   }
 
   const startSnap = snap15(start_time)
@@ -272,9 +287,10 @@ app.post('/blocks/plan', async (c) => {
   if (endSnap <= startSnap) return errJson(c, 400, 'validation_failed', 'end_time must be after start_time', 'end_time')
 
   const sb = getSupabase()
-  const { data: productId, error: rpcError } = await sb.rpc('get_or_create_product', {
-    p_name: product_name,
+  const { data: subjectId, error: rpcError } = await sb.rpc('get_or_create_subject', {
+    p_name: subject_name,
     p_category: '8_기타',
+    p_kind: normalizeKind(subject_kind),
   })
   if (rpcError) return errJson(c, 500, 'db_error', rpcError.message)
 
@@ -282,37 +298,38 @@ app.post('/blocks/plan', async (c) => {
     date,
     start_time: startSnap,
     end_time: endSnap,
-    product_id: productId,
+    subject_id: subjectId,
     note: note ?? null,
-  }).select('*, product:products(*)').single()
+  }).select('*, subject:subjects(*)').single()
   if (error) return errJson(c, 500, 'db_error', error.message)
   return c.json(data, 201)
 })
 
 // ============================================================
-// POST /blocks/actual/start — start an actual block (end_time = start+1min placeholder)
+// POST /blocks/actual/start
+// body: { subject_name, subject_kind?, started_at? }
 // ============================================================
 app.post('/blocks/actual/start', async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body) return errJson(c, 400, 'validation_failed', 'Invalid JSON body')
 
-  const { product_name, started_at } = body
-  if (!product_name) return errJson(c, 400, 'validation_failed', 'product_name required')
+  const { subject_name, subject_kind, started_at } = body
+  if (!subject_name) return errJson(c, 400, 'validation_failed', 'subject_name required')
 
   const now = started_at ? new Date(started_at) : new Date()
   const h = now.getHours()
   const m = now.getMinutes()
   const snappedM = Math.round(m / 15) * 15
   const startStr = `${String(h).padStart(2, '0')}:${String(snappedM % 60).padStart(2, '0')}:00`
-  // end = start + 15 min (placeholder; stopped via /stop)
   const endMin = h * 60 + snappedM + 15
   const endStr = `${String(Math.floor(endMin / 60) % 24).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}:00`
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   const sb = getSupabase()
-  const { data: productId, error: rpcError } = await sb.rpc('get_or_create_product', {
-    p_name: product_name,
+  const { data: subjectId, error: rpcError } = await sb.rpc('get_or_create_subject', {
+    p_name: subject_name,
     p_category: '8_기타',
+    p_kind: normalizeKind(subject_kind),
   })
   if (rpcError) return errJson(c, 500, 'db_error', rpcError.message)
 
@@ -320,8 +337,8 @@ app.post('/blocks/actual/start', async (c) => {
     date: dateStr,
     start_time: startStr,
     end_time: endStr,
-    product_id: productId,
-  }).select('*, product:products(*)').single()
+    subject_id: subjectId,
+  }).select('*, subject:subjects(*)').single()
   if (error) return errJson(c, 500, 'db_error', error.message)
   return c.json(data, 201)
 })
@@ -345,7 +362,7 @@ app.post('/blocks/actual/:id/stop', async (c) => {
     .from('actual_blocks')
     .update({ end_time: endStr })
     .eq('id', id)
-    .select('*, product:products(*)')
+    .select('*, subject:subjects(*)')
     .single()
   if (error) return errJson(c, 500, 'db_error', error.message)
   if (!data) return errJson(c, 404, 'not_found', `Block ${id} not found`)
@@ -354,16 +371,16 @@ app.post('/blocks/actual/:id/stop', async (c) => {
 
 // ============================================================
 // PATCH /blocks/:id
+// body: { note?, start_time?, end_time?, subject_name?, subject_kind? }
 // ============================================================
 app.patch('/blocks/:id', async (c) => {
   const id = c.req.param('id')
   const body = await c.req.json().catch(() => null)
   if (!body) return errJson(c, 400, 'validation_failed', 'Invalid JSON body')
 
-  const { note, start_time, end_time, product_name } = body
+  const { note, start_time, end_time, subject_name, subject_kind } = body
   const sb = getSupabase()
 
-  // Determine which table
   const { data: existing } = await sb
     .from('plan_blocks')
     .select('id')
@@ -375,20 +392,21 @@ app.patch('/blocks/:id', async (c) => {
   if (note !== undefined) updates.note = note
   if (start_time) updates.start_time = snap15(start_time)
   if (end_time) updates.end_time = snap15(end_time)
-  if (product_name) {
-    const { data: productId, error: rpcError } = await sb.rpc('get_or_create_product', {
-      p_name: product_name,
+  if (subject_name) {
+    const { data: subjectId, error: rpcError } = await sb.rpc('get_or_create_subject', {
+      p_name: subject_name,
       p_category: '8_기타',
+      p_kind: normalizeKind(subject_kind),
     })
     if (rpcError) return errJson(c, 500, 'db_error', rpcError.message)
-    updates.product_id = productId
+    updates.subject_id = subjectId
   }
 
   const { data, error } = await sb
     .from(table as 'plan_blocks' | 'actual_blocks')
     .update(updates)
     .eq('id', id)
-    .select('*, product:products(*)')
+    .select('*, subject:subjects(*)')
     .single()
   if (error) return errJson(c, 500, 'db_error', error.message)
   if (!data) return errJson(c, 404, 'not_found', `Block ${id} not found`)
@@ -411,40 +429,42 @@ app.delete('/blocks/:id', async (c) => {
 })
 
 // ============================================================
-// POST /products
+// POST /subjects
+// body: { name, category, kind?, color? }
 // ============================================================
-app.post('/products', async (c) => {
+app.post('/subjects', async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body) return errJson(c, 400, 'validation_failed', 'Invalid JSON body')
 
-  const { name, category, color } = body
+  const { name, category, kind, color } = body
   if (!name || !category) return errJson(c, 400, 'validation_failed', 'name and category required')
   if (!VALID_CATEGORIES.includes(category)) {
     return errJson(c, 400, 'validation_failed', `Invalid category: ${category}`, 'category')
   }
+  const safeKind = normalizeKind(kind)
 
   const sb = getSupabase()
   const { data, error } = await sb
-    .from('products')
-    .insert({ name, category, color: color ?? null })
+    .from('subjects')
+    .insert({ name, category, kind: safeKind, color: color ?? null })
     .select()
     .single()
   if (error) {
-    if (error.code === '23505') return errJson(c, 409, 'conflict', `Product '${name}' already exists`)
+    if (error.code === '23505') return errJson(c, 409, 'conflict', `Subject '${name}' (kind=${safeKind}) already exists`)
     return errJson(c, 500, 'db_error', error.message)
   }
   return c.json(data, 201)
 })
 
 // ============================================================
-// PATCH /products/:id
+// PATCH /subjects/:id
 // ============================================================
-app.patch('/products/:id', async (c) => {
+app.patch('/subjects/:id', async (c) => {
   const id = c.req.param('id')
   const body = await c.req.json().catch(() => null)
   if (!body) return errJson(c, 400, 'validation_failed', 'Invalid JSON body')
 
-  const { name, category, color, is_active } = body
+  const { name, category, kind, color, is_active } = body
   const updates: Record<string, unknown> = {}
   if (name !== undefined) updates.name = name
   if (category !== undefined) {
@@ -453,37 +473,42 @@ app.patch('/products/:id', async (c) => {
     }
     updates.category = category
   }
+  if (kind !== undefined) {
+    if (!VALID_KINDS.includes(kind)) {
+      return errJson(c, 400, 'validation_failed', `Invalid kind: ${kind}`, 'kind')
+    }
+    updates.kind = kind
+  }
   if (color !== undefined) updates.color = color
   if (is_active !== undefined) updates.is_active = is_active
 
   const sb = getSupabase()
   const { data, error } = await sb
-    .from('products')
+    .from('subjects')
     .update(updates)
     .eq('id', id)
     .select()
     .single()
   if (error) return errJson(c, 500, 'db_error', error.message)
-  if (!data) return errJson(c, 404, 'not_found', `Product ${id} not found`)
+  if (!data) return errJson(c, 404, 'not_found', `Subject ${id} not found`)
   return c.json(data)
 })
 
 // ============================================================
-// DELETE /products/:id (soft delete via is_active=false)
+// DELETE /subjects/:id (soft delete via is_active=false)
 // ============================================================
-app.delete('/products/:id', async (c) => {
+app.delete('/subjects/:id', async (c) => {
   const id = c.req.param('id')
   const sb = getSupabase()
 
-  // Soft delete
   const { data, error } = await sb
-    .from('products')
+    .from('subjects')
     .update({ is_active: false })
     .eq('id', id)
     .select()
     .single()
   if (error) return errJson(c, 500, 'db_error', error.message)
-  if (!data) return errJson(c, 404, 'not_found', `Product ${id} not found`)
+  if (!data) return errJson(c, 404, 'not_found', `Subject ${id} not found`)
   return c.json({ deleted: id, soft: true })
 })
 

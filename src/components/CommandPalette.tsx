@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { PlanBlockWithProduct, ActualBlockWithProduct } from '../lib/types'
+import type { PlanBlockWithSubject, ActualBlockWithSubject } from '../lib/types'
 import { useTheme } from '../lib/theme'
 
 interface CommandPaletteProps {
   open: boolean
   onClose: () => void
   /** 현재 로드된 plan blocks (검색용 — 날짜 범위 확장 불필요, 현재 날짜만) */
-  planBlocks: PlanBlockWithProduct[]
-  actualBlocks: ActualBlockWithProduct[]
+  planBlocks: PlanBlockWithSubject[]
+  actualBlocks: ActualBlockWithSubject[]
   /** 날짜 점프 콜백 */
   onNavigateDate: (date: string) => void
 }
 
 type CommandItem =
   | { type: 'action'; label: string; description?: string; action: () => void }
-  | { type: 'block'; kind: 'plan' | 'actual'; block: PlanBlockWithProduct | ActualBlockWithProduct; onNavigate: (date: string) => void }
+  | { type: 'block'; kind: 'plan' | 'actual'; block: PlanBlockWithSubject | ActualBlockWithSubject; onNavigate: (date: string) => void }
 
 function formatDate(d: Date): string {
   const y = d.getFullYear()
@@ -120,7 +120,7 @@ export function CommandPalette({
       if (item.type !== 'block') return false
       const b = item.block
       return (
-        b.product.name.toLowerCase().includes(q) ||
+        b.subject.name.toLowerCase().includes(q) ||
         (b.note && b.note.toLowerCase().includes(q)) ||
         b.date.includes(q)
       )
@@ -241,7 +241,7 @@ export function CommandPalette({
             }
             // block item
             const b = item.block
-            const color = getCategoryColor(b.product.category)
+            const color = getCategoryColor(b.subject.category)
             return (
               <div
                 key={`block-${item.kind}-${b.id}`}
@@ -256,7 +256,7 @@ export function CommandPalette({
                   className="w-2 h-2 rounded-full shrink-0"
                   style={{ background: color }}
                 />
-                <span className="flex-1 truncate">{b.product.name}</span>
+                <span className="flex-1 truncate">{b.subject.name}</span>
                 <span className="text-fg-subtle font-mono text-xs shrink-0">
                   {b.date} {b.start_time.slice(0, 5)}
                 </span>

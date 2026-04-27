@@ -1,14 +1,14 @@
 import { useCallback, useRef, useState } from 'react'
 import type {
-  PlanBlockWithProduct,
-  ActualBlockWithProduct,
+  PlanBlockWithSubject,
+  ActualBlockWithSubject,
 } from '../lib/types'
 import type { CategoryId } from '../lib/categories'
 import { useTheme } from '../lib/theme'
 
 interface DayViewProps {
-  planBlocks: PlanBlockWithProduct[]
-  actualBlocks: ActualBlockWithProduct[]
+  planBlocks: PlanBlockWithSubject[]
+  actualBlocks: ActualBlockWithSubject[]
   dateLabel: string
   startHour?: number
   endHour?: number
@@ -27,7 +27,7 @@ function timeToHour(t: string): number {
 }
 
 interface BlockProps {
-  block: PlanBlockWithProduct | ActualBlockWithProduct
+  block: PlanBlockWithSubject | ActualBlockWithSubject
   kind: 'plan' | 'actual'
   startHour: number
   getCategoryColor: (id: CategoryId) => string
@@ -39,7 +39,7 @@ function Block({ block: b, kind, startHour, getCategoryColor, onClick }: BlockPr
   const end = timeToHour(b.end_time)
   const top = (start - startHour) * HOUR_PX
   const height = (end - start) * HOUR_PX - 2
-  const color = getCategoryColor(b.product.category)
+  const color = getCategoryColor(b.subject.category)
   const isPlan = kind === 'plan'
 
   // plan = 외곽 (left 4 right 4) dashed faint, actual = 안쪽 (left 10 right 10) solid bold.
@@ -67,7 +67,7 @@ function Block({ block: b, kind, startHour, getCategoryColor, onClick }: BlockPr
         onClick ? 'cursor-pointer hover:brightness-125' : '',
       ].join(' ')}
       style={style}
-      title={`${kind} · ${b.product.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`}
+      title={`${kind} · ${b.subject.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`}
     >
       <div className="flex items-center gap-1.5 text-sm">
         <span
@@ -75,7 +75,7 @@ function Block({ block: b, kind, startHour, getCategoryColor, onClick }: BlockPr
           style={{ background: color }}
         />
         <span className={isPlan ? 'truncate' : 'font-medium truncate'}>
-          {b.product.name}
+          {b.subject.name}
         </span>
       </div>
       <div className="text-[10px] text-fg-muted mt-0.5 font-mono">

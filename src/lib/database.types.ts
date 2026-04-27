@@ -46,7 +46,7 @@ export type Database = {
           end_time: string
           id: string
           note: string | null
-          product_id: string
+          subject_id: string
           start_time: string
           updated_at: string | null
         }
@@ -56,7 +56,7 @@ export type Database = {
           end_time: string
           id?: string
           note?: string | null
-          product_id: string
+          subject_id: string
           start_time: string
           updated_at?: string | null
         }
@@ -66,16 +66,16 @@ export type Database = {
           end_time?: string
           id?: string
           note?: string | null
-          product_id?: string
+          subject_id?: string
           start_time?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "actual_blocks_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "actual_blocks_subject_id_fkey"
+            columns: ["subject_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -87,7 +87,7 @@ export type Database = {
           end_time: string
           id: string
           note: string | null
-          product_id: string
+          subject_id: string
           start_time: string
           updated_at: string | null
         }
@@ -97,7 +97,7 @@ export type Database = {
           end_time: string
           id?: string
           note?: string | null
-          product_id: string
+          subject_id: string
           start_time: string
           updated_at?: string | null
         }
@@ -107,27 +107,28 @@ export type Database = {
           end_time?: string
           id?: string
           note?: string | null
-          product_id?: string
+          subject_id?: string
           start_time?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "plan_blocks_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "plan_blocks_subject_id_fkey"
+            columns: ["subject_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
       }
-      products: {
+      subjects: {
         Row: {
           category: string
           color: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
+          kind: string
           name: string
           updated_at: string | null
         }
@@ -137,6 +138,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          kind?: string
           name: string
           updated_at?: string | null
         }
@@ -146,6 +148,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          kind?: string
           name?: string
           updated_at?: string | null
         }
@@ -156,8 +159,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_or_create_product: {
-        Args: { p_category?: string; p_name: string }
+      get_or_create_subject: {
+        Args: { p_category?: string; p_kind?: string; p_name: string }
         Returns: string
       }
     }

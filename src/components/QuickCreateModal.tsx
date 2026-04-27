@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Product } from '../lib/types'
+import type { Subject, SubjectKind } from '../lib/types'
 import { parseNaturalBlock } from '../lib/nlp'
 
 interface QuickCreateModalProps {
   /** Pre-filled start/end from drag-to-create or natural language */
-  prefill: { start: string; end: string; productName?: string } | null
+  prefill: { start: string; end: string; subjectName?: string } | null
   date: string
-  products: Product[]
+  subjects: Subject[]
   onClose: () => void
   onCreated: () => void
   onError: (msg: string) => void
@@ -16,35 +16,42 @@ interface QuickCreateModalProps {
 export function QuickCreateModal({
   prefill,
   date,
-  products,
+  subjects,
   onClose,
   onCreated,
   onError,
 }: QuickCreateModalProps) {
   const [kind, setKind] = useState<'plan' | 'actual'>('actual')
+  const [subjectKind, setSubjectKind] = useState<SubjectKind>('product')
   const [start, setStart] = useState(prefill?.start ?? '09:00')
   const [end, setEnd] = useState(prefill?.end ?? '10:00')
-  const [productId, setProductId] = useState<string>('')
+  const [subjectId, setSubjectId] = useState<string>('')
   const [nlInput, setNlInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const filteredSubjects = useMemo(
+    () => subjects.filter((s) => s.kind === subjectKind),
+    [subjects, subjectKind],
+  )
 
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
-  // mount 시 prefill.productName 매칭 시도, 없으면 첫 product default
+  // mount 시 prefill.subjectName 매칭 시도, 없으면 첫 subject default
   useEffect(() => {
-    if (productId) return
-    if (prefill?.productName) {
-      const matched = matchProduct(products, prefill.productName)
+    if (subjectId && filteredSubjects.find((s) => s.id === subjectId)) return
+    if (prefill?.subjectName) {
+      const matched = matchSubject(filteredSubjects, prefill.subjectName)
       if (matched) {
-        setProductId(matched.id)
+        setSubjectId(matched.id)
         return
       }
     }
-    if (products.length > 0) setProductId(products[0].id)
-  }, [prefill, products, productId])
+    if (filteredSubjects.length > 0) setSubjectId(filteredSubjects[0].id)
+    else setSubjectId('')
+  }, [prefill, filteredSubjects, subjectId])
 
   // ESC to close
   useEffect(() => {
@@ -60,20 +67,24 @@ export function QuickCreateModal({
     if (!parsed) return
     setStart(parsed.start)
     setEnd(parsed.end)
-    const matched = matchProduct(products, parsed.productName)
-    if (matched) setProductId(matched.id)
+    // NLP 매칭은 product/area 둘 다 검색, 매칭된 항목의 kind 로 자동 전환
+    const matched = matchSubject(subjects, parsed.subjectName)
+    if (matched) {
+      setSubjectKind(matched.kind)
+      setSubjectId(matched.id)
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!productId) return onError('product 선택 필요 (markdown 으로 추가 후 sync)')
+    if (!subjectId) return onError('subject 선택 필요 (markdown 으로 추가 후 sync)')
 
     setSubmitting(true)
     const row = {
       date,
       start_time: `${start}:00`,
       end_time: `${end}:00`,
-      product_id: productId,
+      subject_id: subjectId,
     }
     const { error } =
       kind === 'plan'
@@ -120,13 +131,34 @@ export function QuickCreateModal({
 
         <form onSubmit={handleSubmit} className="grid gap-3">
           {/* kind */}
-          <div className="flex gap-3 text-sm">
+          <div className="flex gap-3 text-sm flex-wrap">
             {(['plan', 'actual'] as const).map((k) => (
               <label key={k} className="flex items-center gap-1.5">
                 <input type="radio" checked={kind === k} onChange={() => setKind(k)} />
                 {k}
               </label>
             ))}
+
+            <div className="flex-1" />
+
+            {/* subject kind 토글 */}
+            <div className="flex items-center gap-0.5 bg-bg-subtle rounded px-1 py-0.5 text-xs">
+              {(['product', 'area'] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setSubjectKind(k)}
+                  className={[
+                    'px-2 py-0.5 rounded transition-colors',
+                    subjectKind === k
+                      ? 'bg-bg-elevated text-fg'
+                      : 'text-fg-subtle hover:text-fg-muted',
+                  ].join(' ')}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Time */}
@@ -149,19 +181,19 @@ export function QuickCreateModal({
             </label>
           </div>
 
-          {/* Product select (기존 DB 의 product 만) */}
+          {/* Subject select (kind 필터링) */}
           <select
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
-            disabled={products.length === 0}
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            disabled={filteredSubjects.length === 0}
             className="bg-bg-subtle border border-border-strong rounded px-2 py-1.5 text-sm disabled:opacity-60"
           >
-            {products.length === 0 ? (
-              <option value="">products 없음 — markdown 으로 추가 후 sync</option>
+            {filteredSubjects.length === 0 ? (
+              <option value="">{subjectKind} 없음 — markdown 으로 추가 후 sync</option>
             ) : (
-              products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {p.category.replace(/^\d+_/, '')}
+              filteredSubjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} · {s.category.replace(/^\d+_/, '')}
                 </option>
               ))
             )}
@@ -179,13 +211,13 @@ export function QuickCreateModal({
   )
 }
 
-function matchProduct(products: Product[], name: string): Product | undefined {
+function matchSubject(subjects: Subject[], name: string): Subject | undefined {
   const lower = name.toLowerCase().trim()
   if (!lower) return undefined
   return (
-    products.find((p) => p.name === name) ??
-    products.find((p) => p.name.toLowerCase() === lower) ??
-    products.find((p) => p.name.toLowerCase().includes(lower)) ??
-    products.find((p) => lower.includes(p.name.toLowerCase()))
+    subjects.find((s) => s.name === name) ??
+    subjects.find((s) => s.name.toLowerCase() === lower) ??
+    subjects.find((s) => s.name.toLowerCase().includes(lower)) ??
+    subjects.find((s) => lower.includes(s.name.toLowerCase()))
   )
 }

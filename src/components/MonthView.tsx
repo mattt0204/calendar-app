@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { PlanBlockWithProduct, ActualBlockWithProduct } from '../lib/types'
+import type { PlanBlockWithSubject, ActualBlockWithSubject } from '../lib/types'
 import type { CategoryId } from '../lib/categories'
 import { useTheme } from '../lib/theme'
 
@@ -59,7 +59,7 @@ interface DayStats {
 }
 
 function computeDayStats(
-  blocks: ActualBlockWithProduct[],
+  blocks: ActualBlockWithSubject[],
   getCategoryColor: (id: CategoryId) => string,
 ): DayStats {
   if (blocks.length === 0) return { totalActualHours: 0, categoryColors: [] }
@@ -70,7 +70,7 @@ function computeDayStats(
     const [sh, sm] = b.start_time.split(':').map(Number)
     const [eh, em] = b.end_time.split(':').map(Number)
     const hours = (eh + em / 60) - (sh + sm / 60)
-    catTime.set(b.product.category, (catTime.get(b.product.category) ?? 0) + hours)
+    catTime.set(b.subject.category, (catTime.get(b.subject.category) ?? 0) + hours)
     total += hours
   }
 
@@ -83,8 +83,8 @@ function computeDayStats(
 
 export function MonthView({ anchorDate, onDayClick }: MonthViewProps) {
   const { getCategoryColor } = useTheme()
-  const [actualMap, setActualMap] = useState<Map<string, ActualBlockWithProduct[]>>(new Map())
-  const [planMap, setPlanMap] = useState<Map<string, PlanBlockWithProduct[]>>(new Map())
+  const [actualMap, setActualMap] = useState<Map<string, ActualBlockWithSubject[]>>(new Map())
+  const [planMap, setPlanMap] = useState<Map<string, PlanBlockWithSubject[]>>(new Map())
   const [loading, setLoading] = useState(false)
 
   const d = new Date(`${anchorDate}T00:00:00`)
@@ -108,13 +108,13 @@ export function MonthView({ anchorDate, onDayClick }: MonthViewProps) {
       const [planRes, actualRes] = await Promise.all([
         supabase
           .from('plan_blocks')
-          .select('*, product:products(*)')
+          .select('*, subject:subjects(*)')
           .gte('date', formatDate(fromD))
           .lte('date', to)
           .order('start_time'),
         supabase
           .from('actual_blocks')
-          .select('*, product:products(*)')
+          .select('*, subject:subjects(*)')
           .gte('date', formatDate(fromD))
           .lte('date', to)
           .order('start_time'),
@@ -122,13 +122,13 @@ export function MonthView({ anchorDate, onDayClick }: MonthViewProps) {
       setLoading(false)
       if (planRes.error || actualRes.error) return
 
-      const pm = new Map<string, PlanBlockWithProduct[]>()
-      const am = new Map<string, ActualBlockWithProduct[]>()
-      for (const b of (planRes.data ?? []) as PlanBlockWithProduct[]) {
+      const pm = new Map<string, PlanBlockWithSubject[]>()
+      const am = new Map<string, ActualBlockWithSubject[]>()
+      for (const b of (planRes.data ?? []) as PlanBlockWithSubject[]) {
         if (!pm.has(b.date)) pm.set(b.date, [])
         pm.get(b.date)!.push(b)
       }
-      for (const b of (actualRes.data ?? []) as ActualBlockWithProduct[]) {
+      for (const b of (actualRes.data ?? []) as ActualBlockWithSubject[]) {
         if (!am.has(b.date)) am.set(b.date, [])
         am.get(b.date)!.push(b)
       }

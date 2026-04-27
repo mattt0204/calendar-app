@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { PlanBlockWithProduct, ActualBlockWithProduct } from '../lib/types'
+import type { PlanBlockWithSubject, ActualBlockWithSubject } from '../lib/types'
 import type { CategoryId } from '../lib/categories'
 import { useTheme } from '../lib/theme'
 import type { InspectorTarget } from './InspectorPanel'
@@ -46,12 +46,12 @@ function timeToHour(t: string): number {
 }
 
 interface DayBlocksMap {
-  plan: Map<string, PlanBlockWithProduct[]>
-  actual: Map<string, ActualBlockWithProduct[]>
+  plan: Map<string, PlanBlockWithSubject[]>
+  actual: Map<string, ActualBlockWithSubject[]>
 }
 
 interface BlockDotProps {
-  block: PlanBlockWithProduct | ActualBlockWithProduct
+  block: PlanBlockWithSubject | ActualBlockWithSubject
   kind: 'plan' | 'actual'
   startHour: number
   getCategoryColor: (id: CategoryId) => string
@@ -63,7 +63,7 @@ function BlockDot({ block: b, kind, startHour, getCategoryColor, onClick }: Bloc
   const end = timeToHour(b.end_time)
   const top = (start - startHour) * HOUR_PX
   const height = Math.max((end - start) * HOUR_PX - 1, 4)
-  const color = getCategoryColor(b.product.category)
+  const color = getCategoryColor(b.subject.category)
   const isPlan = kind === 'plan'
 
   return (
@@ -80,7 +80,7 @@ function BlockDot({ block: b, kind, startHour, getCategoryColor, onClick }: Bloc
         background: isPlan ? `${color}11` : `${color}44`,
         borderColor: isPlan ? `${color}88` : color,
       }}
-      title={`${kind} · ${b.product.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`}
+      title={`${kind} · ${b.subject.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`}
     />
   )
 }
@@ -111,13 +111,13 @@ export function WeekView({
       const [planRes, actualRes] = await Promise.all([
         supabase
           .from('plan_blocks')
-          .select('*, product:products(*)')
+          .select('*, subject:subjects(*)')
           .gte('date', from)
           .lte('date', to)
           .order('start_time'),
         supabase
           .from('actual_blocks')
-          .select('*, product:products(*)')
+          .select('*, subject:subjects(*)')
           .gte('date', from)
           .lte('date', to)
           .order('start_time'),
@@ -126,14 +126,14 @@ export function WeekView({
 
       if (planRes.error || actualRes.error) return
 
-      const planMap = new Map<string, PlanBlockWithProduct[]>()
-      const actualMap = new Map<string, ActualBlockWithProduct[]>()
+      const planMap = new Map<string, PlanBlockWithSubject[]>()
+      const actualMap = new Map<string, ActualBlockWithSubject[]>()
 
-      for (const b of (planRes.data ?? []) as PlanBlockWithProduct[]) {
+      for (const b of (planRes.data ?? []) as PlanBlockWithSubject[]) {
         if (!planMap.has(b.date)) planMap.set(b.date, [])
         planMap.get(b.date)!.push(b)
       }
-      for (const b of (actualRes.data ?? []) as ActualBlockWithProduct[]) {
+      for (const b of (actualRes.data ?? []) as ActualBlockWithSubject[]) {
         if (!actualMap.has(b.date)) actualMap.set(b.date, [])
         actualMap.get(b.date)!.push(b)
       }

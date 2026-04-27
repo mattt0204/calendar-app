@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import type { PlanBlockWithProduct, ActualBlockWithProduct } from '../lib/types'
+import type { PlanBlockWithSubject, ActualBlockWithSubject } from '../lib/types'
 import { useTheme } from '../lib/theme'
 
 export interface InspectorTarget {
   kind: 'plan' | 'actual'
-  block: PlanBlockWithProduct | ActualBlockWithProduct
+  block: PlanBlockWithSubject | ActualBlockWithSubject
 }
 
 interface InspectorPanelProps {
@@ -46,7 +46,7 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
   if (!target) return null
 
   const { kind, block: b } = target
-  const color = getCategoryColor(b.product.category)
+  const color = getCategoryColor(b.subject.category)
   const table = kind === 'plan' ? 'plan_blocks' : 'actual_blocks'
 
   async function handleSave(e: FormEvent) {
@@ -98,7 +98,7 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
         >
           <div>
             <div className="text-xs text-fg-subtle uppercase tracking-wider">{kind}</div>
-            <div className="font-medium text-sm truncate max-w-[200px]">{b.product.name}</div>
+            <div className="font-medium text-sm truncate max-w-[200px]">{b.subject.name}</div>
           </div>
           <button
             onClick={onClose}
@@ -117,7 +117,8 @@ export function InspectorPanel({ target, onClose, onRefresh, onError }: Inspecto
               className="w-3 h-3 rounded-full shrink-0"
               style={{ background: color }}
             />
-            <span>{b.product.category.replace(/^\d+_/, '')}</span>
+            <span>{b.subject.category.replace(/^\d+_/, '')}</span>
+            <span className="text-fg-subtle text-[11px] uppercase tracking-wider">· {b.subject.kind}</span>
           </div>
 
           {/* Time range */}

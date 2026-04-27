@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { supabase } from './lib/supabase'
 import type {
-  ActualBlockWithProduct,
-  PlanBlockWithProduct,
-  Product,
+  ActualBlockWithSubject,
+  PlanBlockWithSubject,
+  Subject,
+  SubjectKind,
 } from './lib/types'
 import { DayView } from './components/DayView'
 import { ThemeProvider } from './lib/theme'
@@ -38,13 +39,13 @@ function dateLabel(s: string): string {
 
 function AppInner() {
   const [date, setDate] = useState(todayString())
-  const [planBlocks, setPlanBlocks] = useState<PlanBlockWithProduct[] | null>(
+  const [planBlocks, setPlanBlocks] = useState<PlanBlockWithSubject[] | null>(
     null,
   )
   const [actualBlocks, setActualBlocks] = useState<
-    ActualBlockWithProduct[] | null
+    ActualBlockWithSubject[] | null
   >(null)
-  const [products, setProducts] = useState<Product[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([])
   const [error, setError] = useState<string | null>(null)
   const [tweaksOpen, setTweaksOpen] = useState(false)
   const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget | null>(null)
@@ -54,29 +55,29 @@ function AppInner() {
 
   const refresh = useCallback(async () => {
     setError(null)
-    const [planRes, actualRes, productsRes] = await Promise.all([
+    const [planRes, actualRes, subjectsRes] = await Promise.all([
       supabase
         .from('plan_blocks')
-        .select('*, product:products(*)')
+        .select('*, subject:subjects(*)')
         .eq('date', date)
         .order('start_time'),
       supabase
         .from('actual_blocks')
-        .select('*, product:products(*)')
+        .select('*, subject:subjects(*)')
         .eq('date', date)
         .order('start_time'),
       supabase
-        .from('products')
+        .from('subjects')
         .select('*')
         .eq('is_active', true)
         .order('name'),
     ])
     if (planRes.error) return setError(planRes.error.message)
     if (actualRes.error) return setError(actualRes.error.message)
-    if (productsRes.error) return setError(productsRes.error.message)
-    setPlanBlocks((planRes.data ?? []) as PlanBlockWithProduct[])
-    setActualBlocks((actualRes.data ?? []) as ActualBlockWithProduct[])
-    setProducts((productsRes.data ?? []) as Product[])
+    if (subjectsRes.error) return setError(subjectsRes.error.message)
+    setPlanBlocks((planRes.data ?? []) as PlanBlockWithSubject[])
+    setActualBlocks((actualRes.data ?? []) as ActualBlockWithSubject[])
+    setSubjects((subjectsRes.data ?? []) as Subject[])
   }, [date])
 
   useEffect(() => {
@@ -102,7 +103,7 @@ function AppInner() {
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
+        { event: '*', schema: 'public', table: 'subjects' },
         () => { refresh() },
       )
       .subscribe()
@@ -159,7 +160,7 @@ function AppInner() {
         <QuickCreateModal
           prefill={quickCreate}
           date={date}
-          products={products}
+          subjects={subjects}
           onClose={() => setQuickCreate(null)}
           onCreated={refresh}
           onError={setError}
@@ -261,7 +262,7 @@ function AppInner() {
 
         <AddBlockForm
           date={date}
-          products={products}
+          subjects={subjects}
           onAdded={refresh}
           onError={setError}
         />
@@ -280,36 +281,49 @@ export default function App() {
 
 function AddBlockForm({
   date,
-  products,
+  subjects,
   onAdded,
   onError,
 }: {
   date: string
-  products: Product[]
+  subjects: Subject[]
   onAdded: () => void
   onError: (m: string) => void
 }) {
   const [kind, setKind] = useState<'plan' | 'actual'>('plan')
+  const [subjectKind, setSubjectKind] = useState<SubjectKind>('product')
   const [start, setStart] = useState('09:00')
   const [end, setEnd] = useState('10:00')
-  const [productId, setProductId] = useState<string>('')
+  const [subjectId, setSubjectId] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
 
-  // products 로드 시 첫 항목 default 선택
+  // kind 필터링된 subject 목록
+  const filteredSubjects = useMemo(
+    () => subjects.filter((s) => s.kind === subjectKind),
+    [subjects, subjectKind],
+  )
+
+  // subjectKind 가 바뀌거나 subject 목록이 갱신되면 첫 항목 default 선택
   useEffect(() => {
-    if (!productId && products.length > 0) setProductId(products[0].id)
-  }, [products, productId])
+    if (filteredSubjects.length === 0) {
+      setSubjectId('')
+      return
+    }
+    if (!filteredSubjects.find((s) => s.id === subjectId)) {
+      setSubjectId(filteredSubjects[0].id)
+    }
+  }, [filteredSubjects, subjectId])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    if (!productId) return onError('product 선택 필요 (markdown 으로 추가 후 sync)')
+    if (!subjectId) return onError('subject 선택 필요 (markdown 으로 추가 후 sync)')
 
     setSubmitting(true)
     const row = {
       date,
       start_time: `${start}:00`,
       end_time: `${end}:00`,
-      product_id: productId,
+      subject_id: subjectId,
     }
     // supabase-js 의 from<RelationName> 은 literal 만 narrow — union 으로 호출 X.
     const { error } =
@@ -330,7 +344,7 @@ function AddBlockForm({
         새 block 추가 · {date}
       </div>
 
-      <div className="flex gap-4 text-sm">
+      <div className="flex gap-4 text-sm flex-wrap">
         <label className="flex items-center gap-1.5">
           <input
             type="radio"
@@ -347,6 +361,27 @@ function AddBlockForm({
           />
           actual
         </label>
+
+        <div className="flex-1" />
+
+        {/* subject kind 토글: product / area */}
+        <div className="flex items-center gap-0.5 bg-bg-elevated rounded px-1 py-0.5 text-xs">
+          {(['product', 'area'] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setSubjectKind(k)}
+              className={[
+                'px-2 py-0.5 rounded transition-colors',
+                subjectKind === k
+                  ? 'bg-bg-subtle text-fg'
+                  : 'text-fg-subtle hover:text-fg-muted',
+              ].join(' ')}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 시간 선택: 모바일 single column, sm 이상 2열 */}
@@ -374,17 +409,17 @@ function AddBlockForm({
       </div>
 
       <select
-        value={productId}
-        onChange={(e) => setProductId(e.target.value)}
-        disabled={products.length === 0}
+        value={subjectId}
+        onChange={(e) => setSubjectId(e.target.value)}
+        disabled={filteredSubjects.length === 0}
         className="bg-bg-elevated border border-border-strong rounded px-2 py-2 sm:py-1.5 text-sm disabled:opacity-60"
       >
-        {products.length === 0 ? (
-          <option value="">products 없음 — markdown 으로 추가 후 sync</option>
+        {filteredSubjects.length === 0 ? (
+          <option value="">{subjectKind} 없음 — markdown 으로 추가 후 sync</option>
         ) : (
-          products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} · {p.category.replace(/^\d+_/, '')}
+          filteredSubjects.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} · {s.category.replace(/^\d+_/, '')}
             </option>
           ))
         )}
